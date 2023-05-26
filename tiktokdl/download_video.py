@@ -186,6 +186,23 @@ async def get_video(
     headless: bool | None = None,
     slow_mo: float | None = None
 ) -> TikTokVideo:
+    """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file.
+
+    Args:
+        url (str): The URL to get the information of.
+        download (bool, optional): If the video should be downloaded locally. Defaults to True.
+        browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
+        headless (bool | None, optional): If the browser should be headless. Defaults to None.
+        slow_mo (float | None, optional): Slow the browser down, useful when not headless. Defaults to None.
+
+    Raises:
+        TypeError: If the given browser is not a valid browser.
+        CaptchaFailedException: If the captcha was not able to be solved.
+        DownloadFailedException: If the video could not be downloaded.
+
+    Returns:
+        TikTokVideo: The data for the given URL as a TikTokVideo dataclass.
+    """
     async with async_playwright() as playwright:
         match browser:
             case "firefox":
