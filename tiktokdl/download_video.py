@@ -41,7 +41,20 @@ def __parse_video_info(page_source: str) -> TikTokVideo:
 
 
 def __generate_random_captcha_steps(piece_position: tuple[int, int], tip_y_value: int):
-    pass
+    x_position = piece_position[0]
+
+    steps = []
+    current_distance = 0
+    relative_time = random.randint(100, 300)
+    while current_distance < x_position:
+        current_distance += random.randint(1, 4)
+        relative_time += random.randint(6, 9)
+        steps.append({"relative_time": relative_time, "x": current_distance, "y": tip_y_value})
+
+    if steps[-1].get("x") < x_position or steps[-1].get("x") > x_position:
+        steps.append({"relative_time": relative_time + random.randint(6, 9), "x": x_position, "y": tip_y_value})
+
+    return steps
 
 
 def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
