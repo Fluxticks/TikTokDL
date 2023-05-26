@@ -45,7 +45,26 @@ def __generate_random_captcha_steps(piece_position: tuple[int, int], tip_y_value
 
 
 def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
-    pass
+    data = captcha_get_data.get("data").get("question")
+
+    bg_url = data.get("url1")
+    piece_url = data.get("url2")
+    tip_value = data.get("tip_y")
+
+    bg_image = image_from_url(bg_url)
+    piece_image = image_from_url(piece_url)
+
+    position = find_position(bg_image, piece_image)
+
+    body = {
+        "modified_img_width": 552,
+        "id": captcha_get_data.get("data").get("id"),
+        "mode": "slide",
+        "reply": __generate_random_captcha_steps(position,
+                                                 tip_value)
+    }
+
+    return body
 
 
 async def __handle_captcha(playwright_page: Page, retries: int = 3) -> bool:
