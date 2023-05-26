@@ -5,6 +5,7 @@ from playwright.async_api import async_playwright
 
 from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.video_data import TikTokVideo
+from typing import Literal
 
 __all__ = ["download"]
 
@@ -25,5 +26,13 @@ async def __handle_captcha(playwright_page: Page) -> bool:
     pass
 
 
-async def get_video(url: str, download: bool = True) -> TikTokVideo:
+async def get_video(
+    url: str,
+    download: bool = True,
+    browser: Literal["firefox",
+                     "chromium",
+                     "chrome",
+                     "safari",
+                     "webkit"] = "firefox"
+) -> TikTokVideo:
     pass
