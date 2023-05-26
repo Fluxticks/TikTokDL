@@ -5,6 +5,14 @@ from urllib.request import urlopen
 
 
 def preprocess(image: Mat) -> Mat:
+    """Preprocess a given image for better results in `find_position`.
+
+    Args:
+        image (Mat): The image to process.
+
+    Returns:
+        Mat: The resulting image after processing.
+    """
     scale = 1
     delta = 0
     ddepth = cv.CV_16S
@@ -22,12 +30,31 @@ def preprocess(image: Mat) -> Mat:
 
 
 def image_from_url(url: str) -> Mat:
+    """Load an image from a URL.
+
+    Args:
+        url (str): A URL to an image.
+
+    Returns:
+        Mat: The image object of the given URL.
+    """
     image_request = urlopen(url)
     image_array = np.asarray(bytearray(image_request.read()), dtype=np.uint8)
     return cv.imdecode(image_array, -1)
 
 
 def find_position(background_image: Mat, piece_image: Mat, method: int = cv.TM_SQDIFF) -> tuple[int, int]:
+    """For a given puzzle piece image, find it's corresponding position in the background image.
+
+    Args:
+        background_image (Mat): The background image to find the position in.
+        piece_image (Mat): The puzzle piece to match the location of.
+        method (int, optional): The matching method to use. Defaults to cv.TM_SQDIFF.
+
+    Returns:
+        tuple[int, int]: The (x,y) position of the top left corner of the matched position.
+    """
+
     sobel_bg = preprocess(background_image)
     sobel_piece = preprocess(piece_image)
 
