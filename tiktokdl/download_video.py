@@ -1,8 +1,11 @@
+import json
+from datetime import datetime
 from random import random
 from time import time
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
 
+from bs4 import BeautifulSoup
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import Page, Request
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
@@ -37,7 +40,43 @@ async def __get_captcha_response_headers(request: Request) -> dict:
 
 
 def __parse_video_info(page_source: str) -> TikTokVideo:
-    pass
+    soup = BeautifulSoup(page_source, "lxml")
+    script_data = soup.find("script", attrs={"id": "SIGI_STATE"})
+    data = json.loads(script_data.text)
+
+    post_url = data.get("SEOState").get("canonical")
+
+    author_data = list(data.get("UserModule").get("users").values())[0]
+    username = author_data.get("uniqueId")
+    display_name = author_data.get("nickname")
+    avatar = author_data.get("avatarThumb")
+    author_url = f"https://www.tiktok.com/@{username}/"
+
+    video_data = list(data.get("ItemModule").values())[0]
+    video_description = video_data.get("desc")
+    video_id = video_data.get("id")
+    timestamp = datetime.fromtimestamp(int(video_data.get("createTime")))
+    like_count = video_data.get("stats").get("diggCount")
+    share_count = video_data.get("stats").get("shareCount")
+    comment_count = video_data.get("stats").get("commentCount")
+    view_count = video_data.get("stats").get("playCount")
+    video_thumbnail = video_data.get("video").get("originCover")
+
+    return TikTokVideo(
+        url=post_url,
+        video_id=video_id,
+        author_username=username,
+        author_display_name=display_name,
+        author_avatar=avatar,
+        author_url=author_url,
+        video_description=video_description,
+        timestamp=timestamp,
+        like_count=like_count,
+        share_count=share_count,
+        comment_count=comment_count,
+        view_count=view_count,
+        video_thumbnail=video_thumbnail,
+    )
 
 
 def __generate_random_captcha_steps(piece_position: tuple[int, int], tip_y_value: int):
