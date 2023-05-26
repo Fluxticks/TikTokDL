@@ -15,7 +15,7 @@ from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException
 from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.video_data import TikTokVideo
 
-__all__ = ["download"]
+__all__ = ["get_video"]
 
 
 def __parse_captcha_params_from_url(url: str) -> dict:
