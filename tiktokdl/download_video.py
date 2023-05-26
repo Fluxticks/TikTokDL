@@ -1,8 +1,10 @@
 from random import random
+from time import time
 from typing import Literal
+from urllib.parse import parse_qs, urlparse
 
 from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Page
+from playwright.async_api import Page, Request
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
 
@@ -11,6 +13,27 @@ from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.video_data import TikTokVideo
 
 __all__ = ["download"]
+
+
+def __parse_captcha_params_from_url(url: str) -> dict:
+    parsed_url = urlparse(url, allow_fragments=False)
+    params = parse_qs(parsed_url.query)
+    out = {}
+    for key, value in params.items():
+        out[key] = value[0]
+    return out
+
+
+def __get_captcha_response_params(url: str) -> dict:
+    request_params = __parse_captcha_params_from_url(url)
+    request_params["tmp"] = f"{time.time()}{random.randint(111, 999)}"
+    return request_params
+
+
+async def __get_captcha_response_headers(request: Request) -> dict:
+    all_headers = await request.all_headers()
+    all_headers["content-type"] = "application/json;charset=UTF-8"
+    return all_headers
 
 
 def __parse_video_info(page_source: str) -> TikTokVideo:
@@ -25,8 +48,45 @@ def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
     pass
 
 
-async def __handle_captcha(playwright_page: Page) -> bool:
-    pass
+async def __handle_captcha(playwright_page: Page, retries: int = 3) -> bool:
+    captcha_success_status = False
+    retry_count = 0
+
+    while not captcha_success_status and retry_count < retries:
+        try:
+            async with playwright_page.expect_request(lambda x: "/captcha/get?" in x.url) as request:
+                await playwright_page.wait_for_load_state("networkidle")
+                request_value = await request.value
+                response = await request_value.response()
+                response_data = await response.json()
+
+                captcha_solution = __calculate_captcha_solution(response_data)
+                post_url_query_params = __get_captcha_response_params(request_value.url)
+                post_headers = await __get_captcha_response_headers(request_value)
+                base_url = urlparse(request_value.url).netloc
+                api_request_context = playwright_page.request
+
+                await playwright_page.wait_for_timeout(1000)
+                captcha_status = await api_request_context.post(
+                    f"https://{base_url}/captcha/verify",
+                    data=captcha_solution,
+                    headers=post_headers,
+                    params=post_url_query_params
+                )
+
+                if captcha_status.status != 200:
+                    return False
+
+                captcha_status_data = await captcha_status.json()
+                captcha_success_status = captcha_status_data.get("message") == "Verification complete"
+                retry_count += 1
+
+        except PlaywrightTimeoutError:
+            return True
+        except PlaywrightError:
+            return False
+
+    return captcha_success_status
 
 
 async def __random_timeout_duration(playwright_page: Page, min_timeout: int, max_timout: int):
