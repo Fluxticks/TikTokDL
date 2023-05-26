@@ -30,7 +30,8 @@ async def __handle_captcha(playwright_page: Page) -> bool:
 
 
 async def __random_timeout_duration(playwright_page: Page, min_timeout: int, max_timout: int):
-    pass
+    timout_value = random.randint(min_timeout, max_timout)
+    await playwright_page.wait_for_timeout(timout_value)
 
 
 async def __close_popups(playwright_page: Page) -> int:
