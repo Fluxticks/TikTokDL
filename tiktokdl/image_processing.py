@@ -1,9 +1,10 @@
 import cv2 as cv
+from cv2 import Mat
 import numpy as np
 from urllib.request import urlopen
 
 
-def preprocess(image):
+def preprocess(image: Mat) -> Mat:
     scale = 1
     delta = 0
     ddepth = cv.CV_16S
@@ -20,13 +21,13 @@ def preprocess(image):
     return gradient
 
 
-def image_from_url(url):
+def image_from_url(url: str) -> Mat:
     image_request = urlopen(url)
     image_array = np.asarray(bytearray(image_request.read()), dtype=np.uint8)
     return cv.imdecode(image_array, -1)
 
 
-def find_position(background_image, piece_image, method=cv.TM_SQDIFF):
+def find_position(background_image: Mat, piece_image: Mat, method: int = cv.TM_SQDIFF) -> tuple[int, int]:
     sobel_bg = preprocess(background_image)
     sobel_piece = preprocess(piece_image)
 
