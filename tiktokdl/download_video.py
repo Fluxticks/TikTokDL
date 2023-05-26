@@ -35,7 +35,13 @@ async def __random_timeout_duration(playwright_page: Page, min_timeout: int, max
 
 
 async def __close_popups(playwright_page: Page) -> int:
-    pass
+    close_buttons = await playwright_page.get_by_label("Close").all()
+    for button in close_buttons:
+        await button.click()
+
+    await playwright_page.get_by_role("button", name="Decline all").click()
+    await __random_timeout_duration(playwright_page, 500, 900)
+    return len(close_buttons) + 1
 
 
 async def get_video(
