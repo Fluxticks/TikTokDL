@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 import random
-from time import time
+import time
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
 
