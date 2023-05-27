@@ -151,6 +151,7 @@ async def __handle_captcha(playwright_page: Page, retries: int = 3) -> bool:
                 captcha_status_data = await captcha_status.json()
                 captcha_success_status = captcha_status_data.get("message") == "Verification complete"
                 retry_count += 1
+                await playwright_page.locator("#verify-bar-close").click()
 
         except PlaywrightTimeoutError:
             return True
