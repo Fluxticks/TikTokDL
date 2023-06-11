@@ -181,6 +181,7 @@ async def __close_popups(playwright_page: Page) -> int:
 async def get_video(
     url: str,
     download: bool = True,
+    download_timeout: float = 5000,
     browser: Literal["firefox",
                      "chromium",
                      "chrome",
@@ -194,6 +195,7 @@ async def get_video(
     Args:
         url (str): The URL to get the information of.
         download (bool, optional): If the video should be downloaded locally. Defaults to True.
+        download_timeout (float, optional): The number of ms the download will wait to start before timing out.
         browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
         headless (bool | None, optional): If the browser should be headless. Defaults to None.
         slow_mo (float | None, optional): Slow the browser down, useful when not headless. Defaults to None.
