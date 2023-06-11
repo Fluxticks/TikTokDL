@@ -10,6 +10,7 @@ class TikTokVideo:
     author_display_name: str
     author_avatar: str
     author_url: str
+    video_download_setting: int
     video_description: str
     timestamp: datetime
     like_count: int

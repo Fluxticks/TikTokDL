@@ -54,6 +54,7 @@ def __parse_video_info(page_source: str) -> TikTokVideo:
 
     video_data = list(data.get("ItemModule").values())[0]
     video_description = video_data.get("desc")
+    video_download_setting = video_data.get("downloadSetting")
     video_id = video_data.get("id")
     timestamp = datetime.fromtimestamp(int(video_data.get("createTime")))
     like_count = video_data.get("stats").get("diggCount")
@@ -69,6 +70,7 @@ def __parse_video_info(page_source: str) -> TikTokVideo:
         author_display_name=display_name,
         author_avatar=avatar,
         author_url=author_url,
+        video_download_setting=video_download_setting,
         video_description=video_description,
         timestamp=timestamp,
         like_count=like_count,
