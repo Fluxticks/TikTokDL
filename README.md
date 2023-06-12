@@ -7,7 +7,7 @@ A python package that downloads TikTok videos by URL
 1. Install the package
 
 ```bash
-$ pip install tiktokdl
+$ pip install tiktok-dlpy
 ```
 
 2. Ensure that playwright has been installed

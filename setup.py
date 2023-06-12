@@ -7,7 +7,7 @@ with open("README.md") as f:
     readme = f.read()
 
 setup(
-    name="tiktokdl",
+    name="tiktok-dlpy",
     version="1.1.0",
     url="https://github.com/Fluxticks/TikTokDL",
     download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.1.0.tar.gz",
@@ -23,5 +23,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.10"
     ],
-    keywords=["tiktok", "playwright", "async"],
+    keywords=["tiktok",
+              "playwright",
+              "async"],
 )
