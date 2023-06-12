@@ -10,10 +10,18 @@ setup(
     name="tiktokdl",
     version="1.0.0",
     url="https://github.com/Fluxticks/TikTokDL",
+    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.1.0.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
     install_requires=requirements,
     long_description=readme,
     long_description_content_type="text/markdown",
-    description="A package to dowload TikTok videos via URL"
+    description="A package to dowload TikTok videos via URL",
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.10"
+    ],
+    keywords=["tiktok", "playwright", "async"],
 )
