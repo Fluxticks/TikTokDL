@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 from bs4 import BeautifulSoup
 from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Page, Request
+from playwright.async_api import Page, Request, BrowserContext
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
 
@@ -241,18 +241,60 @@ async def get_video(
 
         await __close_popups(video_page)
 
-        page_video_tag = video_page.locator("video").first
-        await page_video_tag.click(button="right")
-        await __random_timeout_duration(video_page, 100, 500)
-        download_video_li = video_page.locator("li", has_text="Download video")
         try:
-            async with video_page.expect_download() as download_info:
-                await download_video_li.click()
-                download = await download_info.value
-                save_path = f"{video_info.video_id}.mp4"
-                await download.save_as(save_path)
-                video_info.file_path = save_path
+            if video_info.video_download_setting == 0:
+                await primary_download_strategy(browser_context, video_page, video_info, download_timeout)
+            else:
+                await alternate_download_strategy(video_page, video_info, download_timeout)
         except PlaywrightTimeoutError:
             raise DownloadFailedException(url=url)
 
         return video_info
+
+
+async def primary_download_strategy(
+    browser_context: BrowserContext,
+    playwright_page: Page,
+    video_info: TikTokVideo,
+    timeout: float
+):
+    """Downloads the TikTok video using the UI download button that appears on a video. Only valid for videos with download setting 0.
+
+    Args:
+        browser_context (BrowserContext): The current browser context.
+        playwright_page (Page): The current page.
+        video_info (TikTokVideo): The video data of the TikTok video.
+        timeout (float): The number of ms to wait for the download to start before timing out.
+    """
+    browser_context.set_default_timeout(timeout)
+    page_video_tag = playwright_page.locator("video").first
+    await page_video_tag.click(button="right")
+    await __random_timeout_duration(playwright_page, 100, 500)
+    download_video_li = playwright_page.locator("li", has_text="Download video")
+    async with playwright_page.expect_download() as download_info:
+        await download_video_li.click()
+        download = await download_info.value
+        save_path = f"{video_info.video_id}.mp4"
+        await download.save_as(save_path)
+        video_info.file_path = save_path
+
+
+async def alternate_download_strategy(playwright_page: Page, video_info: TikTokVideo, timeout: float):
+    """Uses the the browser request for the video to download the video. Valid for any download setting but less reliable.
+
+    Args:
+        playwright_page (Page): The current page.
+        video_info (TikTokVideo): The video data of the TikTok video.
+        timeout (float): THe number of ms to wait for the request to occur before timing out.
+    """
+    page_video_tag = playwright_page.locator("video").first
+    video_source = await page_video_tag.get_attribute("src")
+
+    response_base_url = video_source.split("?")[0]
+    async with playwright_page.expect_response(lambda x: response_base_url in x.url, timeout=timeout) as response_info:
+        await playwright_page.reload()
+        response = await response_info.value
+        save_path = f"{video_info.video_id}.mp4"
+        with open(save_path, "wb") as f:
+            f.write(await response.body())
+        video_info.file_path = save_path
