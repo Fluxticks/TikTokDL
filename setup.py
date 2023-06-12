@@ -8,7 +8,7 @@ with open("README.md") as f:
 
 setup(
     name="tiktokdl",
-    version="1.0.0",
+    version="1.1.0",
     url="https://github.com/Fluxticks/TikTokDL",
     download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.1.0.tar.gz",
     author="Fluxticks",
