@@ -11,7 +11,7 @@ from playwright.async_api import Page, Request, BrowserContext
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
 
-from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException
+from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException, ResponseParseException
 from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.video_data import TikTokVideo
 
@@ -230,8 +230,12 @@ async def get_video(
         video_page = await browser_context.new_page()
         await video_page.goto(url)
 
-        page_source = await video_page.content()
-        video_info = __parse_video_info(page_source)
+        try:
+            page_source = await video_page.content()
+            video_info = __parse_video_info(page_source)
+        except:
+            raise ResponseParseException(url)
+
         if not download:
             return video_info
 
