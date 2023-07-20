@@ -194,6 +194,8 @@ def __filter_kwargs(function: callable, all_kwargs: dict):
 async def get_video(
     url: str,
     download: bool = True,
+    force_download_strategy: Literal["primary",
+                                     "secondary"] | None = None,
     proxy: dict | None = None,
     download_timeout: float = 5000,
     browser: Literal["firefox",
@@ -210,6 +212,7 @@ async def get_video(
     Args:
         url (str): The URL to get the information of.
         download (bool, optional): If the video should be downloaded locally. Defaults to True.
+        force_download_strategy (Literal[&quot;primary&quot;, &quot;secondary&quot;] | None, optional): Force a specific download strategy to use. Defaults to None which will auto-select the strategy to use.
         proxy (dict | None, optional): The proxy settings to use for the request. Defaults to None.
         download_timeout (float, optional): The number of ms the download will wait to start before timing out.
         browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
@@ -264,6 +267,22 @@ async def get_video(
             raise CaptchaFailedException(url)
 
         await __close_popups(video_page)
+
+        if force_download_strategy:
+            try:
+                match force_download_strategy:
+                    case "primary":
+                        await primary_download_strategy(browser_context, video_page, video_info, download_timeout)
+                    case "secondary":
+                        await alternate_download_strategy(video_page, video_info, download_timeout)
+                    case _:
+                        raise ValueError(
+                            "Invalid download strategy provided. Strategy must be \"primary\", \"secondary\" or None."
+                        )
+            except:
+                raise DownloadFailedException(url=url)
+
+            return video_info
 
         try:
             if video_info.video_download_setting == 0:
