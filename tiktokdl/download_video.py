@@ -1,3 +1,4 @@
+import inspect
 import json
 from datetime import datetime
 import random
@@ -178,6 +179,18 @@ async def __close_popups(playwright_page: Page) -> int:
     return len(close_buttons) + 1
 
 
+def __filter_kwargs(function: callable, all_kwargs: dict):
+    all_args = inspect.getfullargspec(function)
+    allowed_args = all_args.kwonlyargs
+
+    valid_kwargs = {}
+    for key, value in all_kwargs.items():
+        if key in allowed_args:
+            valid_kwargs[key] = value
+
+    return valid_kwargs
+
+
 async def get_video(
     url: str,
     download: bool = True,
@@ -189,7 +202,8 @@ async def get_video(
                      "safari",
                      "webkit"] = "firefox",
     headless: bool | None = None,
-    slow_mo: float | None = None
+    slow_mo: float | None = None,
+    **kwargs: dict
 ) -> TikTokVideo:
     """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file.
 
@@ -225,8 +239,12 @@ async def get_video(
             case _:
                 raise TypeError(f"Invalid browser given. Browser {browser} is not valid.")
 
-        browser_instance = await browser_instance.launch(headless=headless, slow_mo=slow_mo)
-        browser_context = await browser_instance.new_context(proxy=proxy)
+        instance_extra_kwargs = __filter_kwargs(browser_instance.launch, kwargs)
+        browser_instance = await browser_instance.launch(headless=headless, slow_mo=slow_mo, **instance_extra_kwargs)
+
+        context_extra_kwargs = __filter_kwargs(browser_instance.new_context, kwargs)
+        browser_context = await browser_instance.new_context(proxy=proxy, **context_extra_kwargs)
+
         await browser_context.clear_cookies()
 
         video_page = await browser_context.new_page()
