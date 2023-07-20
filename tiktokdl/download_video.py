@@ -181,6 +181,7 @@ async def __close_popups(playwright_page: Page) -> int:
 async def get_video(
     url: str,
     download: bool = True,
+    proxy: dict | None = None,
     download_timeout: float = 5000,
     browser: Literal["firefox",
                      "chromium",
@@ -195,6 +196,7 @@ async def get_video(
     Args:
         url (str): The URL to get the information of.
         download (bool, optional): If the video should be downloaded locally. Defaults to True.
+        proxy (dict | None, optional): The proxy settings to use for the request. Defaults to None.
         download_timeout (float, optional): The number of ms the download will wait to start before timing out.
         browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
         headless (bool | None, optional): If the browser should be headless. Defaults to None.
@@ -224,7 +226,7 @@ async def get_video(
                 raise TypeError(f"Invalid browser given. Browser {browser} is not valid.")
 
         browser_instance = await browser_instance.launch(headless=headless, slow_mo=slow_mo)
-        browser_context = await browser_instance.new_context()
+        browser_context = await browser_instance.new_context(proxy=proxy)
         await browser_context.clear_cookies()
 
         video_page = await browser_context.new_page()
