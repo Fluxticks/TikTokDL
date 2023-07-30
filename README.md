@@ -2,6 +2,10 @@
 
 A python package that downloads TikTok videos by URL
 
+## TODO
+
+- Enable downloading of video slideshows
+
 ## Usage
 
 1. Install the package
