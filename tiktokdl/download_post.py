@@ -365,6 +365,11 @@ async def alternate_download_strategy(playwright_page: Page, video_info: TikTokV
 
 
 async def download_slideshow(video_info: TikTokSlide):
+    """For a given Slideshow post, download the images associated with it.
+
+    Args:
+        video_info (TikTokSlide): The Slideshow post data.
+    """
     images = []
     for idx, image_info in enumerate(video_info.images):
         image_url = image_info.get("imageURL").get("urlList")[-1]
