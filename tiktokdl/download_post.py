@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 import random
 import time
+from asyncio import sleep as async_sleep
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
 from urllib.request import urlretrieve
@@ -208,7 +209,7 @@ def __filter_kwargs(function: callable, all_kwargs: dict):
     return valid_kwargs
 
 
-async def get_post(
+async def __get_post(
     url: str,
     download: bool = True,
     force_download_strategy: Literal["primary",
@@ -224,26 +225,6 @@ async def get_post(
     slow_mo: float | None = None,
     **kwargs: dict
 ) -> TikTokVideo | TikTokSlide:
-    """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file.
-
-    Args:
-        url (str): The URL to get the information of.
-        download (bool, optional): If the video should be downloaded locally. Defaults to True.
-        force_download_strategy (Literal[&quot;primary&quot;, &quot;secondary&quot;] | None, optional): Force a specific download strategy to use. Defaults to None which will auto-select the strategy to use.
-        proxy (dict | None, optional): The proxy settings to use for the request. Defaults to None.
-        download_timeout (float, optional): The number of ms the download will wait to start before timing out.
-        browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
-        headless (bool | None, optional): If the browser should be headless. Defaults to None.
-        slow_mo (float | None, optional): Slow the browser down, useful when not headless. Defaults to None.
-
-    Raises:
-        TypeError: If the given browser is not a valid browser.
-        CaptchaFailedException: If the captcha was not able to be solved.
-        DownloadFailedException: If the video could not be downloaded.
-
-    Returns:
-        TikTokVideo: The data for the given URL as a TikTokVideo dataclass.
-    """
     async with async_playwright() as playwright:
         match browser:
             case "firefox":
@@ -314,6 +295,76 @@ async def get_post(
             raise DownloadFailedException(url=url)
 
         return video_info
+
+
+async def get_post(
+    url: str,
+    download: bool = True,
+    force_download_strategy: Literal["primary",
+                                     "secondary"] | None = None,
+    proxy: dict | None = None,
+    retries: int = 3,
+    retry_delay: float = 500,
+    download_timeout: float = 5000,
+    browser: Literal["firefox",
+                     "chromium",
+                     "chrome",
+                     "safari",
+                     "webkit"] = "firefox",
+    headless: bool | None = None,
+    slow_mo: float | None = None,
+    **kwargs: dict
+) -> TikTokVideo | TikTokSlide:
+    """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file.
+
+    Args:
+        url (str): The URL to get the information of.
+        download (bool, optional): If the video should be downloaded locally. Defaults to True.
+        force_download_strategy (Literal[&quot;primary&quot;, &quot;secondary&quot;] | None, optional): Force a specific download strategy to use. Defaults to None which will auto-select the strategy to use.
+        proxy (dict | None, optional): The proxy settings to use for the request. Defaults to None.
+        retries (int, optional): The number of times to retry upon failure. Defaults to 3.
+        retry_delay (float, optional): The number of ms to wait before retrying. Defaults to 500.
+        download_timeout (float, optional): The number of ms the download will wait to start before timing out.
+        browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
+        headless (bool | None, optional): If the browser should be headless. Defaults to None.
+        slow_mo (float | None, optional): Slow the browser down, useful when not headless. Defaults to None.
+
+    Raises:
+        TypeError: If the given browser is not a valid browser.
+        CaptchaFailedException: If the captcha was not able to be solved.
+        DownloadFailedException: If the video could not be downloaded.
+
+    Returns:
+        TikTokVideo | TikTokSlide: The data for the given URL as a TikTokVideo or TikTokSlide dataclass.
+    """
+
+    for x in range(retries + 1):
+        try:
+            result = await __get_post(
+                url=url,
+                download=download,
+                force_download_strategy=force_download_strategy,
+                proxy=proxy,
+                download_timeout=download_timeout,
+                browser=browser,
+                headless=headless,
+                slow_mo=slow_mo, 
+                **kwargs
+            )
+            return result
+        except Exception as e:
+            if x < retries:
+                await async_sleep(retry_delay / 1000.0)
+                continue
+
+            if isinstance(e, ResponseParseException):
+                raise ResponseParseException(url=url)
+            
+            if isinstance(e, CaptchaFailedException):
+                raise CaptchaFailedException(url=url)
+            
+            if isinstance(e, DownloadFailedException):
+                raise DownloadFailedException(url=url)
 
 
 async def primary_download_strategy(
