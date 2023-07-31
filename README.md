@@ -1,6 +1,6 @@
 # TikTokDL
 
-A python package to download TikTok videos or Slideshows by URL without needing to login.
+A python package to download TikTok videos or slideshows by URL without needing to login.
 
 ## Usage
 
