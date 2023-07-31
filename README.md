@@ -1,10 +1,6 @@
 # TikTokDL
 
-A python package that downloads TikTok videos by URL
-
-## TODO
-
-- Enable downloading of video slideshows
+A python package to download TikTok videos or Slideshows by URL without needing to login.
 
 ## Usage
 
@@ -30,11 +26,11 @@ from tiktokdl.download_post import get_post
 3. Run the function in an async context
 
 ```python
-video_url = ""
+video_or_slide_url = ""
 
 video_info = asyncio.run(
     get_post(
-        video_url
+        video_or_slide_url
     )
 )
 ```
