@@ -5,6 +5,7 @@ import random
 import time
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
+from urllib.request import urlretrieve
 
 from bs4 import BeautifulSoup
 from playwright.async_api import Error as PlaywrightError
@@ -284,6 +285,10 @@ async def get_post(
 
         await __close_popups(video_page)
 
+        if isinstance(video_info, TikTokSlide):
+            await download_slideshow(video_page, video_info)
+            return video_info
+
         if force_download_strategy:
             try:
                 match force_download_strategy:
@@ -357,3 +362,14 @@ async def alternate_download_strategy(playwright_page: Page, video_info: TikTokV
         with open(save_path, "wb") as f:
             f.write(await response.body())
         video_info.file_path = save_path
+
+
+async def download_slideshow(playwright_page: Page, video_info: TikTokSlide):
+    images = []
+    for idx, image_info in enumerate(video_info.images):
+        image_url = image_info.get("imageURL").get("urlList")[-1]
+        file = f"{idx+1}.jpeg"
+        urlretrieve(image_url, file)
+        images.append(file)
+
+    video_info.images = images
