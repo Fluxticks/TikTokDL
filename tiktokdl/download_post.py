@@ -4,6 +4,7 @@ from datetime import datetime
 import random
 import time
 from asyncio import sleep as async_sleep
+from os.path import curdir, sep as PATH_SEP
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
 from urllib.request import urlretrieve
@@ -19,6 +20,16 @@ from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.post_data import TikTokVideo, TikTokSlide, TikTokPost
 
 __all__ = ["get_post"]
+
+
+def __validate_download_path(download_path: str | None):
+    if download_path is None:
+        download_path = f"{curdir}{PATH_SEP}"
+
+    if not download_path.endswith(PATH_SEP):
+        download_path += PATH_SEP
+    
+    return download_path
 
 
 def __parse_captcha_params_from_url(url: str) -> dict:
@@ -216,6 +227,7 @@ async def __get_post(
                                      "secondary"] | None = None,
     proxy: dict | None = None,
     download_timeout: float = 5000,
+    download_path: str | None = None,
     browser: Literal["firefox",
                      "chromium",
                      "chrome",
@@ -267,7 +279,7 @@ async def __get_post(
         await __close_popups(video_page)
 
         if isinstance(video_info, TikTokSlide):
-            await download_slideshow(video_info)
+            await download_slideshow(video_info, download_path)
             return video_info
 
         if force_download_strategy:
@@ -306,6 +318,7 @@ async def get_post(
     retries: int = 3,
     retry_delay: float = 500,
     download_timeout: float = 5000,
+    download_path: str | None = None,
     browser: Literal["firefox",
                      "chromium",
                      "chrome",
@@ -325,6 +338,7 @@ async def get_post(
         retries (int, optional): The number of times to retry upon failure. Defaults to 3.
         retry_delay (float, optional): The number of ms to wait before retrying. Defaults to 500.
         download_timeout (float, optional): The number of ms the download will wait to start before timing out.
+        download_path (str | None, optional): The path to download vidoes or images to. Defaults to None, the current directory.
         browser (Literal[&quot;firefox&quot;, &quot;chromium&quot;, &quot;chrome&quot;, &quot;safari&quot;, &quot;webkit&quot;], optional): The browser to use to scrape the content. Defaults to "firefox".
         headless (bool | None, optional): If the browser should be headless. Defaults to None.
         slow_mo (float | None, optional): Slow the browser down, useful when not headless. Defaults to None.
@@ -346,6 +360,7 @@ async def get_post(
                 force_download_strategy=force_download_strategy,
                 proxy=proxy,
                 download_timeout=download_timeout,
+                download_path=download_path,
                 browser=browser,
                 headless=headless,
                 slow_mo=slow_mo, 
@@ -371,7 +386,8 @@ async def primary_download_strategy(
     browser_context: BrowserContext,
     playwright_page: Page,
     video_info: TikTokVideo,
-    timeout: float
+    timeout: float,
+    download_path: str | None
 ):
     """Downloads the TikTok video using the UI download button that appears on a video. Only valid for videos with download setting 0.
 
@@ -380,7 +396,9 @@ async def primary_download_strategy(
         playwright_page (Page): The current page.
         video_info (TikTokVideo): The video data of the TikTok video.
         timeout (float): The number of ms to wait for the download to start before timing out.
+        download_path (str | None): The path to download the video to. If None, uses current directory.
     """
+    download_path = __validate_download_path(download_path)
     browser_context.set_default_timeout(timeout)
     page_video_tag = playwright_page.locator("video").first
     await page_video_tag.click(button="right")
@@ -394,14 +412,21 @@ async def primary_download_strategy(
         video_info.file_path = save_path
 
 
-async def alternate_download_strategy(playwright_page: Page, video_info: TikTokVideo, timeout: float):
+async def alternate_download_strategy(
+        playwright_page: Page, 
+        video_info: TikTokVideo, 
+        timeout: float, 
+        download_path: str | None
+):
     """Uses the the browser request for the video to download the video. Valid for any download setting but less reliable.
 
     Args:
         playwright_page (Page): The current page.
         video_info (TikTokVideo): The video data of the TikTok video.
         timeout (float): THe number of ms to wait for the request to occur before timing out.
+        download_path (str | None): The path to download the video to. If None, uses current directory.
     """
+    download_path = __validate_download_path(download_path)
     page_video_tag = playwright_page.locator("video").first
     video_source = await page_video_tag.get_attribute("src")
 
@@ -409,22 +434,25 @@ async def alternate_download_strategy(playwright_page: Page, video_info: TikTokV
     async with playwright_page.expect_response(lambda x: response_base_url in x.url, timeout=timeout) as response_info:
         await playwright_page.reload()
         response = await response_info.value
-        save_path = f"{video_info.post_id}.mp4"
+        save_path = f"{download_path}{video_info.post_id}.mp4"
         with open(save_path, "wb") as f:
             f.write(await response.body())
         video_info.file_path = save_path
 
 
-async def download_slideshow(video_info: TikTokSlide):
+async def download_slideshow(video_info: TikTokSlide, download_path: str | None):
     """For a given Slideshow post, download the images associated with it.
 
     Args:
         video_info (TikTokSlide): The Slideshow post data.
+        download_path (str | None): The path to download the images to. If None, uses current directory.
     """
+    download_path = __validate_download_path(download_path)
+    
     images = []
     for idx, image_info in enumerate(video_info.images):
         image_url = image_info.get("imageURL").get("urlList")[-1]
-        file = f"{idx+1}.jpeg"
+        file = f"{download_path}{idx+1}.jpeg"
         urlretrieve(image_url, file)
         images.append(file)
 
