@@ -286,7 +286,7 @@ async def get_post(
         await __close_popups(video_page)
 
         if isinstance(video_info, TikTokSlide):
-            await download_slideshow(video_page, video_info)
+            await download_slideshow(video_info)
             return video_info
 
         if force_download_strategy:
@@ -364,7 +364,7 @@ async def alternate_download_strategy(playwright_page: Page, video_info: TikTokV
         video_info.file_path = save_path
 
 
-async def download_slideshow(playwright_page: Page, video_info: TikTokSlide):
+async def download_slideshow(video_info: TikTokSlide):
     images = []
     for idx, image_info in enumerate(video_info.images):
         image_url = image_info.get("imageURL").get("urlList")[-1]
