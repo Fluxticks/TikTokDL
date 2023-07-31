@@ -24,7 +24,7 @@ $ python -m playwright install-deps
 2. Import the package
 
 ```python
-from tiktokdl.download_video import get_video
+from tiktokdl.download_post import get_post
 ```
 
 3. Run the function in an async context
@@ -33,7 +33,7 @@ from tiktokdl.download_video import get_video
 video_url = ""
 
 video_info = asyncio.run(
-    get_video(
+    get_post(
         video_url
     )
 )

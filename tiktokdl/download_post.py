@@ -16,7 +16,7 @@ from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException,
 from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.video_data import TikTokVideo
 
-__all__ = ["get_video"]
+__all__ = ["get_post"]
 
 
 def __parse_captcha_params_from_url(url: str) -> dict:
@@ -40,7 +40,7 @@ async def __get_captcha_response_headers(request: Request) -> dict:
     return all_headers
 
 
-def __parse_video_info(page_source: str) -> TikTokVideo:
+def __parse_post_info(page_source: str) -> TikTokVideo:
     soup = BeautifulSoup(page_source, "lxml")
     script_data = soup.find("script", attrs={"id": "SIGI_STATE"})
     data = json.loads(script_data.text)
@@ -191,7 +191,7 @@ def __filter_kwargs(function: callable, all_kwargs: dict):
     return valid_kwargs
 
 
-async def get_video(
+async def get_post(
     url: str,
     download: bool = True,
     force_download_strategy: Literal["primary",
@@ -255,7 +255,7 @@ async def get_video(
 
         try:
             page_source = await video_page.content()
-            video_info = __parse_video_info(page_source)
+            video_info = __parse_post_info(page_source)
         except:
             raise ResponseParseException(url)
 
