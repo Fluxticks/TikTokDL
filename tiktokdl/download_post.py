@@ -5,6 +5,7 @@ import random
 import time
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
+from urllib.request import urlretrieve
 
 from bs4 import BeautifulSoup
 from playwright.async_api import Error as PlaywrightError
@@ -14,9 +15,9 @@ from playwright.async_api import async_playwright
 
 from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException, ResponseParseException
 from tiktokdl.image_processing import find_position, image_from_url
-from tiktokdl.video_data import TikTokVideo
+from tiktokdl.post_data import TikTokVideo, TikTokSlide, TikTokPost
 
-__all__ = ["get_video"]
+__all__ = ["get_post"]
 
 
 def __parse_captcha_params_from_url(url: str) -> dict:
@@ -40,7 +41,11 @@ async def __get_captcha_response_headers(request: Request) -> dict:
     return all_headers
 
 
-def __parse_video_info(page_source: str) -> TikTokVideo:
+def __is_image_post(post_data: dict) -> bool:
+    return post_data.get("imagePost") is not None
+
+
+def __parse_post_info(page_source: str) -> TikTokVideo | TikTokSlide:
     soup = BeautifulSoup(page_source, "lxml")
     script_data = soup.find("script", attrs={"id": "SIGI_STATE"})
     data = json.loads(script_data.text)
@@ -53,33 +58,45 @@ def __parse_video_info(page_source: str) -> TikTokVideo:
     avatar = author_data.get("avatarThumb")
     author_url = f"https://www.tiktok.com/@{username}/"
 
-    video_data = list(data.get("ItemModule").values())[0]
-    video_description = video_data.get("desc")
-    video_download_setting = video_data.get("downloadSetting")
-    video_id = video_data.get("id")
-    timestamp = datetime.fromtimestamp(int(video_data.get("createTime")))
-    like_count = video_data.get("stats").get("diggCount")
-    share_count = video_data.get("stats").get("shareCount")
-    comment_count = video_data.get("stats").get("commentCount")
-    view_count = video_data.get("stats").get("playCount")
-    video_thumbnail = video_data.get("video").get("originCover")
+    post_data = list(data.get("ItemModule").values())[0]
 
-    return TikTokVideo(
-        url=post_url,
-        video_id=video_id,
-        author_username=username,
-        author_display_name=display_name,
-        author_avatar=avatar,
-        author_url=author_url,
-        video_download_setting=video_download_setting,
-        video_description=video_description,
-        timestamp=timestamp,
-        like_count=like_count,
-        share_count=share_count,
-        comment_count=comment_count,
-        view_count=view_count,
-        video_thumbnail=video_thumbnail,
+    post_description = post_data.get("desc")
+    post_download_setting = post_data.get("downloadSetting")
+    post_id = post_data.get("id")
+    timestamp = datetime.fromtimestamp(int(post_data.get("createTime")))
+    like_count = post_data.get("stats").get("diggCount")
+    share_count = post_data.get("stats").get("shareCount")
+    comment_count = post_data.get("stats").get("commentCount")
+    view_count = post_data.get("stats").get("playCount")
+
+    post = TikTokPost(
+            url=post_url,
+            post_id=post_id,
+            author_username=username,
+            author_display_name=display_name,
+            author_avatar=avatar,
+            author_url=author_url,
+            post_download_setting=post_download_setting,
+            post_description=post_description,
+            timestamp=timestamp,
+            like_count=like_count,
+            share_count=share_count,
+            comment_count=comment_count,
+            view_count=view_count
     )
+
+    if __is_image_post(post_data):
+        images = post_data.get("imagePost").get("images")
+        return TikTokSlide(
+            **post.__dict__,
+            images=images
+        )
+    else:
+        video_thumbnail = post_data.get("video").get("originCover")
+        return TikTokVideo(
+             **post.__dict__,
+            video_thumbnail=video_thumbnail
+        )
 
 
 def __generate_random_captcha_steps(piece_position: tuple[int, int], tip_y_value: int):
@@ -191,7 +208,7 @@ def __filter_kwargs(function: callable, all_kwargs: dict):
     return valid_kwargs
 
 
-async def get_video(
+async def get_post(
     url: str,
     download: bool = True,
     force_download_strategy: Literal["primary",
@@ -206,7 +223,7 @@ async def get_video(
     headless: bool | None = None,
     slow_mo: float | None = None,
     **kwargs: dict
-) -> TikTokVideo:
+) -> TikTokVideo | TikTokSlide:
     """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file.
 
     Args:
@@ -255,7 +272,7 @@ async def get_video(
 
         try:
             page_source = await video_page.content()
-            video_info = __parse_video_info(page_source)
+            video_info = __parse_post_info(page_source)
         except:
             raise ResponseParseException(url)
 
@@ -267,6 +284,10 @@ async def get_video(
             raise CaptchaFailedException(url)
 
         await __close_popups(video_page)
+
+        if isinstance(video_info, TikTokSlide):
+            await download_slideshow(video_info)
+            return video_info
 
         if force_download_strategy:
             try:
@@ -341,3 +362,19 @@ async def alternate_download_strategy(playwright_page: Page, video_info: TikTokV
         with open(save_path, "wb") as f:
             f.write(await response.body())
         video_info.file_path = save_path
+
+
+async def download_slideshow(video_info: TikTokSlide):
+    """For a given Slideshow post, download the images associated with it.
+
+    Args:
+        video_info (TikTokSlide): The Slideshow post data.
+    """
+    images = []
+    for idx, image_info in enumerate(video_info.images):
+        image_url = image_info.get("imageURL").get("urlList")[-1]
+        file = f"{idx+1}.jpeg"
+        urlretrieve(image_url, file)
+        images.append(file)
+
+    video_info.images = images

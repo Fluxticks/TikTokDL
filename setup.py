@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="tiktok-dlpy",
-    version="1.2.0",
+    version="1.3.0",
     url="https://github.com/Fluxticks/TikTokDL",
-    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.2.0.tar.gz",
+    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.3.0.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
     install_requires=[
@@ -14,7 +14,7 @@ setup(
         "numpy",
         "opencv-python",
     ],
-    description="A package to dowload TikTok videos via URL",
+    description="A package to download TikTok videos or slideshows by URL without needing to login",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",

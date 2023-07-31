@@ -1,10 +1,6 @@
 # TikTokDL
 
-A python package that downloads TikTok videos by URL
-
-## TODO
-
-- Enable downloading of video slideshows
+A python package to download TikTok videos or slideshows by URL without needing to login.
 
 ## Usage
 
@@ -24,17 +20,17 @@ $ python -m playwright install-deps
 2. Import the package
 
 ```python
-from tiktokdl.download_video import get_video
+from tiktokdl.download_post import get_post
 ```
 
 3. Run the function in an async context
 
 ```python
-video_url = ""
+video_or_slide_url = ""
 
 video_info = asyncio.run(
-    get_video(
-        video_url
+    get_post(
+        video_or_slide_url
     )
 )
 ```
