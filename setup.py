@@ -14,7 +14,7 @@ setup(
         "numpy",
         "opencv-python",
     ],
-    description="A package to dowload TikTok videos via URL",
+    description="A package to download TikTok videos or slideshows by URL without needing to login",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
