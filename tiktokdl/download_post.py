@@ -306,7 +306,7 @@ async def get_post(
             return video_info
 
         try:
-            if video_info.video_download_setting == 0:
+            if video_info.post_download_setting == 0:
                 await primary_download_strategy(browser_context, video_page, video_info, download_timeout)
             else:
                 await alternate_download_strategy(video_page, video_info, download_timeout)
@@ -338,7 +338,7 @@ async def primary_download_strategy(
     async with playwright_page.expect_download() as download_info:
         await download_video_li.click()
         download = await download_info.value
-        save_path = f"{video_info.video_id}.mp4"
+        save_path = f"{video_info.post_id}.mp4"
         await download.save_as(save_path)
         video_info.file_path = save_path
 
@@ -358,7 +358,7 @@ async def alternate_download_strategy(playwright_page: Page, video_info: TikTokV
     async with playwright_page.expect_response(lambda x: response_base_url in x.url, timeout=timeout) as response_info:
         await playwright_page.reload()
         response = await response_info.value
-        save_path = f"{video_info.video_id}.mp4"
+        save_path = f"{video_info.post_id}.mp4"
         with open(save_path, "wb") as f:
             f.write(await response.body())
         video_info.file_path = save_path
