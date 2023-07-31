@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="tiktok-dlpy",
-    version="1.3.0",
+    version="1.3.1",
     url="https://github.com/Fluxticks/TikTokDL",
-    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.3.0.tar.gz",
+    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.3.1.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
     install_requires=[
