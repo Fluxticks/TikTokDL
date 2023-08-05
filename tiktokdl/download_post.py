@@ -28,7 +28,7 @@ def __validate_download_path(download_path: str | None):
 
     if not download_path.endswith(PATH_SEP):
         download_path += PATH_SEP
-    
+
     return download_path
 
 
@@ -82,33 +82,27 @@ def __parse_post_info(page_source: str) -> TikTokVideo | TikTokSlide:
     view_count = post_data.get("stats").get("playCount")
 
     post = TikTokPost(
-            url=post_url,
-            post_id=post_id,
-            author_username=username,
-            author_display_name=display_name,
-            author_avatar=avatar,
-            author_url=author_url,
-            post_download_setting=post_download_setting,
-            post_description=post_description,
-            timestamp=timestamp,
-            like_count=like_count,
-            share_count=share_count,
-            comment_count=comment_count,
-            view_count=view_count
+        url=post_url,
+        post_id=post_id,
+        author_username=username,
+        author_display_name=display_name,
+        author_avatar=avatar,
+        author_url=author_url,
+        post_download_setting=post_download_setting,
+        post_description=post_description,
+        timestamp=timestamp,
+        like_count=like_count,
+        share_count=share_count,
+        comment_count=comment_count,
+        view_count=view_count
     )
 
     if __is_image_post(post_data):
         images = post_data.get("imagePost").get("images")
-        return TikTokSlide(
-            **post.__dict__,
-            images=images
-        )
+        return TikTokSlide(**post.__dict__, images=images)
     else:
         video_thumbnail = post_data.get("video").get("originCover")
-        return TikTokVideo(
-             **post.__dict__,
-            video_thumbnail=video_thumbnail
-        )
+        return TikTokVideo(**post.__dict__, video_thumbnail=video_thumbnail)
 
 
 def __generate_random_captcha_steps(piece_position: tuple[int, int], tip_y_value: int):
@@ -363,7 +357,7 @@ async def get_post(
                 download_path=download_path,
                 browser=browser,
                 headless=headless,
-                slow_mo=slow_mo, 
+                slow_mo=slow_mo,
                 **kwargs
             )
             return result
@@ -374,10 +368,10 @@ async def get_post(
 
             if isinstance(e, ResponseParseException):
                 raise ResponseParseException(url=url)
-            
+
             if isinstance(e, CaptchaFailedException):
                 raise CaptchaFailedException(url=url)
-            
+
             if isinstance(e, DownloadFailedException):
                 raise DownloadFailedException(url=url)
 
@@ -413,10 +407,10 @@ async def primary_download_strategy(
 
 
 async def alternate_download_strategy(
-        playwright_page: Page, 
-        video_info: TikTokVideo, 
-        timeout: float, 
-        download_path: str | None
+    playwright_page: Page,
+    video_info: TikTokVideo,
+    timeout: float,
+    download_path: str | None
 ):
     """Uses the the browser request for the video to download the video. Valid for any download setting but less reliable.
 
@@ -448,7 +442,7 @@ async def download_slideshow(video_info: TikTokSlide, download_path: str | None)
         download_path (str | None): The path to download the images to. If None, uses current directory.
     """
     download_path = __validate_download_path(download_path)
-    
+
     images = []
     for idx, image_info in enumerate(video_info.images):
         image_url = image_info.get("imageURL").get("urlList")[-1]
