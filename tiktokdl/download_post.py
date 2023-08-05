@@ -1,23 +1,25 @@
 import inspect
 import json
-from datetime import datetime
 import random
 import time
 from asyncio import sleep as async_sleep
-from os.path import curdir, sep as PATH_SEP
+from datetime import datetime
+from os.path import curdir
+from os.path import sep as PATH_SEP
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
 from urllib.request import urlretrieve
 
 from bs4 import BeautifulSoup
+from playwright.async_api import BrowserContext
 from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Page, Request, BrowserContext
+from playwright.async_api import Page, Request
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
 
-from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException, ResponseParseException, TikTokBaseException
+from tiktokdl.exceptions import (CaptchaFailedException, DownloadFailedException, ResponseParseException, TikTokBaseException)
 from tiktokdl.image_processing import find_position, image_from_url
-from tiktokdl.post_data import TikTokVideo, TikTokSlide, TikTokPost
+from tiktokdl.post_data import TikTokPost, TikTokSlide, TikTokVideo
 
 __all__ = ["get_post"]
 
