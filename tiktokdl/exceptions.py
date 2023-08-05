@@ -1,19 +1,23 @@
-class CaptchaFailedException(Exception):
+class TikTokBaseException(Exception):
 
-    def __init__(self, url: str, *args: any):
+    def __init__(self, url: str, *args: object) -> None:
         super().__init__(*args)
         self.url = url
 
 
-class DownloadFailedException(Exception):
+class CaptchaFailedException(TikTokBaseException):
 
     def __init__(self, url: str, *args: any):
-        super().__init__(*args)
-        self.url = url
+        super().__init__(url, *args)
 
 
-class ResponseParseException(Exception):
+class DownloadFailedException(TikTokBaseException):
 
     def __init__(self, url: str, *args: any):
-        super().__init__(*args)
-        self.url = url
+        super().__init__(url, *args)
+
+
+class ResponseParseException(TikTokBaseException):
+
+    def __init__(self, url: str, *args: any):
+        super().__init__(url, *args)
