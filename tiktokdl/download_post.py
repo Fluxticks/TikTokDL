@@ -15,7 +15,7 @@ from playwright.async_api import Page, Request, BrowserContext
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
 
-from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException, ResponseParseException
+from tiktokdl.exceptions import CaptchaFailedException, DownloadFailedException, ResponseParseException, TikTokBaseException
 from tiktokdl.image_processing import find_position, image_from_url
 from tiktokdl.post_data import TikTokVideo, TikTokSlide, TikTokPost
 
@@ -361,19 +361,15 @@ async def get_post(
                 **kwargs
             )
             return result
-        except Exception as e:
+        except TikTokBaseException as e:
             if x < retries:
                 await async_sleep(retry_delay / 1000.0)
                 continue
 
-            if isinstance(e, ResponseParseException):
-                raise ResponseParseException(url=url)
+            raise e
 
-            if isinstance(e, CaptchaFailedException):
-                raise CaptchaFailedException(url=url)
-
-            if isinstance(e, DownloadFailedException):
-                raise DownloadFailedException(url=url)
+        except Exception as e:
+            raise e
 
 
 async def primary_download_strategy(
