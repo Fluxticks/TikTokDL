@@ -279,26 +279,21 @@ async def __get_post(
             return video_info
 
         if force_download_strategy:
-            try:
-                match force_download_strategy:
-                    case "primary":
-                        await primary_download_strategy(browser_context, video_page, video_info, download_timeout)
-                    case "secondary":
-                        await alternate_download_strategy(video_page, video_info, download_timeout)
-                    case _:
-                        raise ValueError(
-                            "Invalid download strategy provided. Strategy must be \"primary\", \"secondary\" or None."
-                        )
-            except:
-                raise DownloadFailedException(url=url)
-
-            return video_info
+            match force_download_strategy:
+                case "primary":
+                    video_info.post_download_setting = 0
+                case "secondary":
+                    video_info.post_download_setting = 1
+                case _:
+                    raise ValueError(
+                        "Invalid download strategy provided. Strategy must be \"primary\", \"secondary\" or None."
+                    )
 
         try:
             if video_info.post_download_setting == 0:
-                await primary_download_strategy(browser_context, video_page, video_info, download_timeout)
+                await primary_download_strategy(browser_context, video_page, video_info, download_timeout, download_path)
             else:
-                await alternate_download_strategy(video_page, video_info, download_timeout)
+                await alternate_download_strategy(video_page, video_info, download_timeout, download_path)
         except PlaywrightTimeoutError:
             raise DownloadFailedException(url=url)
 
