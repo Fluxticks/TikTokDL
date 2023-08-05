@@ -2,6 +2,10 @@
 
 A python package to download TikTok videos or slideshows by URL without needing to login.
 
+## TODO
+
+- Cleanup `download_post.py`
+
 ## Usage
 
 1. Install the package
