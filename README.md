@@ -28,7 +28,7 @@ from tiktokdl.download_post import get_post
 ```python
 video_or_slide_url = ""
 
-video_info = asyncio.run(
+post_info = asyncio.run(
     get_post(
         video_or_slide_url
     )
