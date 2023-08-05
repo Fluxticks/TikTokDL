@@ -145,13 +145,13 @@ def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
     return body
 
 
-async def __handle_captcha(playwright_page: Page, attempts: int = 3) -> bool:
+async def __handle_captcha(playwright_page: Page, attempts: int = 3, timeout: float | None = 5000) -> bool:
     captcha_success_status = False
     attempt_count = 0
 
     while not captcha_success_status and attempt_count < attempts:
         try:
-            async with playwright_page.expect_request(lambda x: "/captcha/get?" in x.url) as request:
+            async with playwright_page.expect_request(lambda x: "/captcha/get?" in x.url, timeout=timeout) as request:
                 await playwright_page.wait_for_load_state("networkidle")
                 request_value = await request.value
                 response = await request_value.response()
@@ -222,6 +222,8 @@ async def __get_post(
     proxy: dict | None = None,
     download_timeout: float = 5000,
     download_path: str | None = None,
+    captcha_timeout: float = 5000,
+    captcha_attempts: int = 3,
     browser: Literal["firefox",
                      "chromium",
                      "chrome",
@@ -266,7 +268,7 @@ async def __get_post(
         if not download:
             return video_info
 
-        captcha_success_result = await __handle_captcha(video_page)
+        captcha_success_result = await __handle_captcha(video_page, captcha_attempts, captcha_timeout)
         if not captcha_success_result:
             raise CaptchaFailedException(url)
 
