@@ -396,7 +396,7 @@ async def primary_download_strategy(
     async with playwright_page.expect_download() as download_info:
         await download_video_li.click()
         download = await download_info.value
-        save_path = f"{video_info.post_id}.mp4"
+        save_path = f"{download_path}{video_info.post_id}.mp4"
         await download.save_as(save_path)
         video_info.file_path = save_path
 
