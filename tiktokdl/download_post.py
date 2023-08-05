@@ -145,11 +145,11 @@ def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
     return body
 
 
-async def __handle_captcha(playwright_page: Page, retries: int = 3) -> bool:
+async def __handle_captcha(playwright_page: Page, attempts: int = 3) -> bool:
     captcha_success_status = False
-    retry_count = 0
+    attempt_count = 0
 
-    while not captcha_success_status and retry_count < retries:
+    while not captcha_success_status and attempt_count < attempts:
         try:
             async with playwright_page.expect_request(lambda x: "/captcha/get?" in x.url) as request:
                 await playwright_page.wait_for_load_state("networkidle")
@@ -176,7 +176,7 @@ async def __handle_captcha(playwright_page: Page, retries: int = 3) -> bool:
 
                 captcha_status_data = await captcha_status.json()
                 captcha_success_status = captcha_status_data.get("message") == "Verification complete"
-                retry_count += 1
+                attempt_count += 1
                 await playwright_page.locator("#verify-bar-close").click()
 
         except PlaywrightTimeoutError:
