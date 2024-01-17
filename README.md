@@ -4,7 +4,8 @@ A python package to download TikTok videos or slideshows by URL without needing 
 
 ## TODO
 
-- Cleanup `download_post.py`
+- Allow usage of other browsers (eg. Chromium)
+    - Requires a fix regarding response body protocol error (similar to [this](https://github.com/microsoft/playwright/issues/26388) issue)
 
 ## Usage
 
