@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 16 * * *"
 run-name: Running tests for Python CI
 jobs:
   build:
