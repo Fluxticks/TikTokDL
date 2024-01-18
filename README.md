@@ -1,3 +1,5 @@
+![Main Workflow](https://github.com/Fluxticks/TikTokDL/actions/workflows/main.yml/badge.svg)
+
 # TikTokDL
 
 A python package to download TikTok videos or slideshows by URL without needing to login.
@@ -5,7 +7,7 @@ A python package to download TikTok videos or slideshows by URL without needing 
 ## TODO
 
 - Allow usage of other browsers (eg. Chromium)
-    - Requires a fix regarding response body protocol error (similar to [this](https://github.com/microsoft/playwright/issues/26388) issue)
+  - Requires a fix regarding response body protocol error (similar to [this](https://github.com/microsoft/playwright/issues/26388) issue)
 
 ## Usage
 

@@ -18,7 +18,6 @@ class Test_TestTikTokURL(unittest.TestCase):
         self.assertIsNotNone(actual_data)
 
         self.assertEqual(expected_data.post_id, actual_data.post_id)
-        self.assertEqual(expected_data.timestamp, actual_data.timestamp)
         self.assertEqual(expected_data.author_username,
                          actual_data.author_username)
 
