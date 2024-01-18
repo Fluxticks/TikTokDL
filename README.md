@@ -1,4 +1,4 @@
-![Main Workflow](https://github.com/Fluxticks/TikTokDL/actions/workflows/main.yml/badge.svg)
+![Main Workflow](https://github.com/Fluxticks/TikTokDL/actions/workflows/main.yml/badge.svg) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/tiktok-dlpy)
 
 # TikTokDL
 
