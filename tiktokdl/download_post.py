@@ -13,6 +13,8 @@ from tiktokdl.exceptions import (CaptchaFailedException,
                                  ResponseParseException, TikTokBaseException)
 from tiktokdl.post_data import TikTokPost, TikTokSlide, TikTokVideo
 
+from typing import Union
+
 __all__ = ["get_post"]
 
 
@@ -28,7 +30,7 @@ def __filter_kwargs(function: callable, all_kwargs: dict):
     return valid_kwargs
 
 
-def __validate_download_path(download_path: str | None):
+def __validate_download_path(download_path: Union[str, None]):
     if download_path is None:
         download_path = f"{curdir}{PATH_SEP}"
 
@@ -42,7 +44,8 @@ def __post_is_slideshow(data: dict) -> bool:
     return data.get("imagePost") is not None
 
 
-def __parse_api_response(api_response: dict):
+def __parse_api_response(
+        api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
     root_data = api_response.get("itemInfo").get("itemStruct")
 
     author_data = root_data.get("author")
@@ -77,7 +80,7 @@ def __parse_api_response(api_response: dict):
 
 
 async def download_video(playwright_page: Page, video_info: TikTokVideo,
-                         timeout: float, download_path: str | None):
+                         timeout: float, download_path: Union[str, None]):
     """Uses the the browser request for the video to download the video. Valid for any download setting but less reliable.
 
     Args:
@@ -92,7 +95,7 @@ async def download_video(playwright_page: Page, video_info: TikTokVideo,
 
     response_base_url = video_source.split("?")[0]
     async with playwright_page.expect_request_finished(
-        lambda x: response_base_url in x.url, timeout=timeout) as request:
+            lambda x: response_base_url in x.url, timeout=timeout) as request:
         request_value = await request.value
         response = await request_value.response()
         save_path = f"{download_path}{video_info.post_id}.mp4"
@@ -102,7 +105,7 @@ async def download_video(playwright_page: Page, video_info: TikTokVideo,
 
 
 async def download_slideshow(video_info: TikTokSlide,
-                             download_path: str | None):
+                             download_path: Union[str, None]):
     """For a given Slideshow post, download the images associated with it.
 
     Args:
@@ -123,12 +126,12 @@ async def download_slideshow(video_info: TikTokSlide,
 
 async def __get_post(url: str,
                      download: bool = True,
-                     proxy: dict | None = None,
+                     proxy: Union[dict, None] = None,
                      request_timeout: float = 5000,
-                     download_path: str | None = None,
-                     headless: bool | None = None,
-                     slow_mo: float | None = None,
-                     **kwargs):
+                     download_path: Union[str, None] = None,
+                     headless: Union[bool, None] = None,
+                     slow_mo: Union[float, None] = None,
+                     **kwargs) -> Union[TikTokSlide, TikTokVideo]:
     async with async_playwright() as playwright:
         # TODO: Find a way to use Chromium and be able to recive the download_video response body
         # browser = await playwright.chromium.launch(headless=headless, slow_mo=slow_mo, args=["--disable-http2"])
@@ -175,14 +178,14 @@ async def __get_post(url: str,
 
 async def get_post(url: str,
                    download: bool = True,
-                   proxy: dict | None = None,
+                   proxy: Union[dict, None] = None,
                    retries: int = 3,
                    retry_delay: float = 500,
                    request_timeout: float = 5000,
-                   download_path: str | None = None,
-                   headless: bool | None = None,
-                   slow_mo: float | None = None,
-                   **kwargs):
+                   download_path: Union[str, None] = None,
+                   headless: Union[bool, None] = None,
+                   slow_mo: Union[float, None] = None,
+                   **kwargs) -> Union[TikTokSlide, TikTokVideo]:
     """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file or slideshow images as JPEG files.
 
     Args:

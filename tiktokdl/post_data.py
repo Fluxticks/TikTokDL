@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from typing import List
+
 
 @dataclass()
 class TikTokPost:
@@ -27,4 +29,4 @@ class TikTokVideo(TikTokPost):
 
 @dataclass()
 class TikTokSlide(TikTokPost):
-    images: list[str] = None
+    images: List[str] = None

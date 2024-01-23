@@ -8,6 +8,8 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from tiktokdl.image_processing import find_position, image_from_url
 
+from typing import Tuple, Union
+
 
 def __parse_captcha_params_from_url(url: str) -> dict:
     parsed_url = urlparse(url, allow_fragments=False)
@@ -30,7 +32,7 @@ async def __get_captcha_response_headers(request: Request) -> dict:
     return all_headers
 
 
-def __generate_random_captcha_steps(piece_position: tuple[int, int],
+def __generate_random_captcha_steps(piece_position: Tuple[int, int],
                                     tip_y_value: int):
     x_position = piece_position[0]
 
@@ -80,15 +82,15 @@ def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
 
 async def handle_captcha(playwright_page: Page,
                          attempts: int = 3,
-                         timeout: float | None = 5000) -> bool:
+                         timeout: Union[float, None] = 5000) -> bool:
     captcha_success_status = False
     attempt_count = 0
 
     while not captcha_success_status and attempt_count < attempts:
         try:
             async with playwright_page.expect_request(
-                lambda x: "/captcha/get?" in x.url,
-                timeout=timeout) as request:
+                    lambda x: "/captcha/get?" in x.url,
+                    timeout=timeout) as request:
                 await playwright_page.wait_for_load_state("networkidle")
                 request_value = await request.value
                 response = await request_value.response()

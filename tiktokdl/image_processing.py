@@ -3,6 +3,8 @@ from cv2 import Mat
 import numpy as np
 from urllib.request import urlopen
 
+from typing import Tuple 
+
 
 def preprocess(image: Mat) -> Mat:
     """Preprocess a given image for better results in `find_position`.
@@ -43,7 +45,7 @@ def image_from_url(url: str) -> Mat:
     return cv.imdecode(image_array, -1)
 
 
-def find_position(background_image: Mat, piece_image: Mat, method: int = cv.TM_SQDIFF) -> tuple[int, int]:
+def find_position(background_image: Mat, piece_image: Mat, method: int = cv.TM_SQDIFF) -> Tuple[int, int]:
     """For a given puzzle piece image, find it's corresponding position in the background image.
 
     Args:
