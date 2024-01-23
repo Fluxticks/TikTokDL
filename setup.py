@@ -7,9 +7,9 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="tiktok-dlpy",
-    version="1.5.1",
+    version="1.5.2",
     url="https://github.com/Fluxticks/TikTokDL",
-    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.5.1.tar.gz",
+    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.5.2.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
     install_requires=[
@@ -25,6 +25,8 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10"
     ],
     keywords=["tiktok", "playwright", "async"],
