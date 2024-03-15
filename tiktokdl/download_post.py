@@ -8,9 +8,12 @@ from urllib.request import urlretrieve
 from playwright.async_api import Page, async_playwright
 
 from tiktokdl.captcha import handle_captcha
-from tiktokdl.exceptions import (CaptchaFailedException,
-                                 DownloadFailedException,
-                                 ResponseParseException, TikTokBaseException)
+from tiktokdl.exceptions import (
+    CaptchaFailedException,
+    DownloadFailedException,
+    ResponseParseException,
+    RetryLimitReached,
+)
 from tiktokdl.post_data import TikTokPost, TikTokSlide, TikTokVideo
 
 from typing import Union
@@ -218,11 +221,9 @@ async def get_post(url: str,
                                       slow_mo=slow_mo,
                                       **kwargs)
             return result
-        except TikTokBaseException as e:
+        except Exception as e:
             if x < retries:
                 await async_sleep(retry_delay / 1000.0)
                 continue
 
-            raise e
-        except Exception as e:
-            raise e
+            raise RetryLimitReached(e, retries, url)
