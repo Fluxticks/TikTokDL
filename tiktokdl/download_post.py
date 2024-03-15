@@ -173,7 +173,7 @@ async def __get_post(url: str,
                         await download_video(page, parsed_response,
                                              request_timeout, download_path)
                 except:
-                    DownloadFailedException(url=url)
+                    raise DownloadFailedException(url=url)
 
         return parsed_response
 
