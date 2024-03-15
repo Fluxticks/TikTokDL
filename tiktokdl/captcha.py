@@ -59,7 +59,7 @@ def __generate_random_captcha_steps(piece_position: Tuple[int, int],
 
 
 def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
-    data = captcha_get_data.get("data").get("question")
+    data = captcha_get_data.get("data").get("challenges")[0].get("question")
 
     bg_url = data.get("url1")
     piece_url = data.get("url2")
