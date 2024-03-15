@@ -7,9 +7,9 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="tiktok-dlpy",
-    version="1.5.2",
+    version="1.5.3",
     url="https://github.com/Fluxticks/TikTokDL",
-    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.5.2.tar.gz",
+    download_url="https://github.com/Fluxticks/TikTokDL/archive/v1.5.3.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
     install_requires=[
