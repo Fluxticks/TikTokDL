@@ -140,9 +140,8 @@ async def __get_post(url: str,
                                                   slow_mo=slow_mo,
                                                   proxy=proxy,
                                                   **other_kwargs)
-        device = playwright.devices["Pixel 5"]
+        device = playwright.devices["iPhone 14 Pro Max"]
         device.pop("is_mobile")
-        device.pop("has_touch")
         context = await browser.new_context(**device)
         await context.clear_cookies()
 
