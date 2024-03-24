@@ -11,7 +11,7 @@ class Test_TestTikTokURL(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.url_1 = "https://vm.tiktok.com/ZGeUuafAg/"
-        self.url_2 = "https://vm.tiktok.com/ZGeUuafAg/"
+        self.url_2 = "https://vm.tiktok.com/ZGeAjeqVQ/"
         self.url_3 = "https://vm.tiktok.com/ZGefwPvNt/"  # slideshow
 
     def assert_data(self, expected_data, actual_data):
@@ -46,22 +46,21 @@ class Test_TestTikTokURL(unittest.TestCase):
 
     def test_url_2(self):
         expected_data = TikTokVideo(
-            url='https://tiktok.com/@ben_reilly_/video/7341431726746438944',
-            post_id='7341431726746438944',
-            author_username='ben_reilly_',
-            author_display_name='OurGloriousGermany',
+            url='https://tiktok.com/@bbnotiktok/video/7337426987662822661',
+            post_id='7337426987662822661',
+            author_username='bbnotiktok',
+            author_display_name='bbno$',
             author_avatar='some-url',
-            author_url='https://tiktok.com/@ben_reilly_',
+            author_url='https://tiktok.com/@bbnotiktok',
             post_download_setting=0,
-            post_description='Watch till the end Frankfurt is unreal😍🇩🇪 Please '
-            'comment which places you want next! #travel '
-            '#frankfurt #world ',
-            timestamp=datetime(2024, 3, 1, 17, 24, 40),
-            like_count=281600,
-            share_count=8943,
-            comment_count=5857,
-            view_count=2400000,
-            video_thumbnail="some-url")
+            post_description='i love asmongold',
+            timestamp=datetime(2024, 2, 19, 22, 24, 13),
+            like_count=70100,
+            share_count=318,
+            comment_count=194,
+            view_count=794800,
+            video_thumbnail='some-url',
+            file_path=None)
 
         actual_data = asyncio.run(get_post(url=self.url_2, download=False))
 
