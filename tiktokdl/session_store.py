@@ -6,10 +6,9 @@ from typing import List
 from tiktokdl.tiktok_magic import DEVICE_ID_TARGET_COOKIE
 
 
-async def wait_for_cookie(page: Page,
-                          target_cookie: str,
-                          timeout: float,
-                          timeout_interval: float = 100) -> str:
+async def wait_for_cookie(
+    page: Page, target_cookie: str, timeout: float, timeout_interval: float = 100
+) -> str:
     """Wait for a given cookie to be set and then get the value.
 
     Args:
@@ -59,9 +58,9 @@ def get_ms_token(cookies: List[Cookie]) -> str:
     return msToken
 
 
-async def get_device_id(page: Page,
-                        timeout: float,
-                        timeout_interval: float = 100) -> int:
+async def get_device_id(
+    page: Page, timeout: float, timeout_interval: float = 100
+) -> int:
     """Get the device_id / did of the current session. As this cookie is not set upon accessing TikTok, it must be awaited until it is.
 
     Args:

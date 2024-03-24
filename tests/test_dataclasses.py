@@ -11,13 +11,11 @@ POST = TikTokPost(
     author_url="https://tiktok.com",
     post_download_setting=1,
     post_description="description",
-    timestamp=datetime(1997,
-                       1,
-                       1),
+    timestamp=datetime(1997, 1, 1),
     like_count=1,
     share_count=2,
     comment_count=3,
-    view_count=4
+    view_count=4,
 )
 
 
@@ -75,10 +73,14 @@ class Test_TestTikTokVideo(unittest.TestCase):
         self.assertEqual(self.post.url, self.video_post.url)
         self.assertEqual(self.post.post_id, self.video_post.post_id)
         self.assertEqual(self.post.author_username, self.video_post.author_username)
-        self.assertEqual(self.post.author_display_name, self.video_post.author_display_name)
+        self.assertEqual(
+            self.post.author_display_name, self.video_post.author_display_name
+        )
         self.assertEqual(self.post.author_avatar, self.video_post.author_avatar)
         self.assertEqual(self.post.author_url, self.video_post.author_url)
-        self.assertEqual(self.post.post_download_setting, self.video_post.post_download_setting)
+        self.assertEqual(
+            self.post.post_download_setting, self.video_post.post_download_setting
+        )
         self.assertEqual(self.post.post_description, self.video_post.post_description)
         self.assertEqual(self.post.timestamp, self.video_post.timestamp)
         self.assertEqual(self.post.like_count, self.video_post.like_count)
@@ -104,10 +106,14 @@ class Test_TestTikTokSlide(unittest.TestCase):
         self.assertEqual(self.post.url, self.slide_post.url)
         self.assertEqual(self.post.post_id, self.slide_post.post_id)
         self.assertEqual(self.post.author_username, self.slide_post.author_username)
-        self.assertEqual(self.post.author_display_name, self.slide_post.author_display_name)
+        self.assertEqual(
+            self.post.author_display_name, self.slide_post.author_display_name
+        )
         self.assertEqual(self.post.author_avatar, self.slide_post.author_avatar)
         self.assertEqual(self.post.author_url, self.slide_post.author_url)
-        self.assertEqual(self.post.post_download_setting, self.slide_post.post_download_setting)
+        self.assertEqual(
+            self.post.post_download_setting, self.slide_post.post_download_setting
+        )
         self.assertEqual(self.post.post_description, self.slide_post.post_description)
         self.assertEqual(self.post.timestamp, self.slide_post.timestamp)
         self.assertEqual(self.post.like_count, self.slide_post.like_count)

@@ -3,7 +3,7 @@ from cv2 import Mat
 import numpy as np
 from urllib.request import urlopen
 
-from typing import Tuple 
+from typing import Tuple
 
 
 def preprocess(image: Mat) -> Mat:
@@ -21,8 +21,26 @@ def preprocess(image: Mat) -> Mat:
 
     output = cv.GaussianBlur(image, (3, 3), 0)
     output = cv.cvtColor(output, cv.COLOR_BGR2GRAY)
-    gradient_x = cv.Sobel(output, ddepth, 1, 0, ksize=3, scale=scale, delta=delta, borderType=cv.BORDER_DEFAULT)
-    gradient_y = cv.Sobel(output, ddepth, 0, 1, ksize=3, scale=scale, delta=delta, borderType=cv.BORDER_DEFAULT)
+    gradient_x = cv.Sobel(
+        output,
+        ddepth,
+        1,
+        0,
+        ksize=3,
+        scale=scale,
+        delta=delta,
+        borderType=cv.BORDER_DEFAULT,
+    )
+    gradient_y = cv.Sobel(
+        output,
+        ddepth,
+        0,
+        1,
+        ksize=3,
+        scale=scale,
+        delta=delta,
+        borderType=cv.BORDER_DEFAULT,
+    )
 
     gradient_x_abs = cv.convertScaleAbs(gradient_x)
     gradient_y_abs = cv.convertScaleAbs(gradient_y)
@@ -45,7 +63,9 @@ def image_from_url(url: str) -> Mat:
     return cv.imdecode(image_array, -1)
 
 
-def find_position(background_image: Mat, piece_image: Mat, method: int = cv.TM_SQDIFF) -> Tuple[int, int]:
+def find_position(
+    background_image: Mat, piece_image: Mat, method: int = cv.TM_SQDIFF
+) -> Tuple[int, int]:
     """For a given puzzle piece image, find it's corresponding position in the background image.
 
     Args:

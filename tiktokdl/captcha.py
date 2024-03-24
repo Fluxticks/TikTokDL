@@ -4,14 +4,23 @@ from random import randint
 from playwright.async_api import Page
 
 from tiktokdl.image_processing import find_position, image_from_url
-from tiktokdl.tiktok_magic import CAPTCHA_GET_HEADERS, CAPTCHA_HOST, CAPTCHA_POST_HEADERS, CAPTCHA_VERSION, CHALLENGE_CODE, MODIFIED_IMAGE_WIDTH, OS_TYPE
+from tiktokdl.tiktok_magic import (
+    CAPTCHA_GET_HEADERS,
+    CAPTCHA_HOST,
+    CAPTCHA_POST_HEADERS,
+    CAPTCHA_VERSION,
+    CHALLENGE_CODE,
+    MODIFIED_IMAGE_WIDTH,
+    OS_TYPE,
+)
 from tiktokdl.session_store import get_device_id, get_ms_token, get_verify_fp
 
 from typing import Dict, Tuple
 
 
-def __generate_captcha_response(captcha_solution: Dict, captcha_id: str,
-                                verify_id: str) -> Dict:
+def __generate_captcha_response(
+    captcha_solution: Dict, captcha_id: str, verify_id: str
+) -> Dict:
     data = {
         "modified_img_width": MODIFIED_IMAGE_WIDTH,
         "id": captcha_id,
@@ -24,8 +33,9 @@ def __generate_captcha_response(captcha_solution: Dict, captcha_id: str,
     return response
 
 
-def __generate_random_captcha_steps(target_position,
-                                    tip_y_value: int) -> Tuple[Dict, Dict]:
+def __generate_random_captcha_steps(
+    target_position, tip_y_value: int
+) -> Tuple[Dict, Dict]:
     """Generate a random sequence of movements to simulate a human sliding the piece to the correct position.
 
     Args:
@@ -46,30 +56,31 @@ def __generate_random_captcha_steps(target_position,
         current_time += time_step
         current_position += move_step
 
-        steps.append({
-            "x": current_position,
-            "y": target_position,
-            "relative_time": current_time
-        })
+        steps.append(
+            {"x": current_position, "y": target_position, "relative_time": current_time}
+        )
 
         deltas.append({"x": move_step, "y": randint(-2, 2), "time": time_step})
 
-    if steps[-1]['x'] > target_position or steps[-1]['x'] < target_position:
+    if steps[-1]["x"] > target_position or steps[-1]["x"] < target_position:
         time_step = randint(8, 9)
-        move_step = target_position - steps[-1]['x']
-        steps.append({
-            "x": target_position,
-            "y": tip_y_value,
-            "relatie_time": current_time + time_step
-        })
+        move_step = target_position - steps[-1]["x"]
+        steps.append(
+            {
+                "x": target_position,
+                "y": tip_y_value,
+                "relatie_time": current_time + time_step,
+            }
+        )
 
         deltas.append({"x": move_step, "y": randint(-2, 2), "time": time_step})
 
     return steps, deltas
 
 
-def __calculate_image_scale(original_width: int,
-                            output_width: int = MODIFIED_IMAGE_WIDTH) -> float:
+def __calculate_image_scale(
+    original_width: int, output_width: int = MODIFIED_IMAGE_WIDTH
+) -> float:
     """Get the scale to modify the image by to get the desired modified image width.
 
     Args:
@@ -126,16 +137,18 @@ def __parse_captcha_challenge(challenge_response: Dict) -> Dict:
         "mode": mode,
         "url_1": url_1,
         "url_2": url_2,
-        "tip_y": tip_y
+        "tip_y": tip_y,
     }
 
 
-async def __get_challenge(page: Page,
-                          verify_fp: str,
-                          device_id: int,
-                          ms_token: str,
-                          timeout_interval: float = 100,
-                          max_requests: int = 5) -> Dict:
+async def __get_challenge(
+    page: Page,
+    verify_fp: str,
+    device_id: int,
+    ms_token: str,
+    timeout_interval: float = 100,
+    max_requests: int = 5,
+) -> Dict:
     """Get a challenge from TikTok that can be used to verify the current session.
 
     Args:
@@ -164,10 +177,11 @@ async def __get_challenge(page: Page,
                 "fp": verify_fp,
                 "type": "verify",
                 "subtype": "slide",
-                "msToken": ms_token
+                "msToken": ms_token,
             },
             method="GET",
-            headers=CAPTCHA_GET_HEADERS)
+            headers=CAPTCHA_GET_HEADERS,
+        )
 
         data = await captcha_request.json()
         challenge_type = data.get("data").get("mode")
@@ -191,13 +205,13 @@ async def verify_session(page: Page, cookie_timeout: float = 30000) -> bool:
     device_id = await get_device_id(page, cookie_timeout)
     ms_token = get_ms_token(cookies)
 
-    captcha_challenge = await __get_challenge(page, verify_fp, device_id,
-                                              ms_token)
+    captcha_challenge = await __get_challenge(page, verify_fp, device_id, ms_token)
 
     captcha_solution = __solve_captcha(captcha_challenge)
 
     challenge_response_data = __generate_captcha_response(
-        captcha_solution, captcha_challenge.get("captcha_id"), verify_fp)
+        captcha_solution, captcha_challenge.get("captcha_id"), verify_fp
+    )
 
     captcha_response_request = await page.request.fetch(
         f"https://{CAPTCHA_HOST}/captcha/verify",
@@ -212,9 +226,10 @@ async def verify_session(page: Page, cookie_timeout: float = 30000) -> bool:
             "subtype": "slide",
             "mode": "slide",
             "msToken": ms_token,
-            "challenge_code": CHALLENGE_CODE
+            "challenge_code": CHALLENGE_CODE,
         },
-        method="POST")
+        method="POST",
+    )
 
     captcha_response = await captcha_response_request.json()
     return captcha_response.get("message") == "Verification complete"
