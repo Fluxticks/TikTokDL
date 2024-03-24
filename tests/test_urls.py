@@ -18,17 +18,17 @@ class Test_TestTikTokURL(unittest.TestCase):
         self.assertIsNotNone(actual_data)
 
         self.assertEqual(expected_data.post_id, actual_data.post_id)
-        self.assertEqual(expected_data.author_username,
-                         actual_data.author_username)
+        self.assertEqual(expected_data.timestamp, 
+                         actual_data.timestamp)
 
     def test_url_1(self):
         expected_data = TikTokVideo(
-            url='https://tiktok.com/@ben_reilly_/video/7341431726746438944',
+            url='https://tiktok.com/@ourgloriousgermany/video/7341431726746438944',
             post_id='7341431726746438944',
-            author_username='ben_reilly_',
+            author_username='ourgloriousgermany',
             author_display_name='OurGloriousGermany',
             author_avatar='some-url',
-            author_url='https://tiktok.com/@ben_reilly_',
+            author_url='https://tiktok.com/@ourgloriousgermany',
             post_download_setting=0,
             post_description='Watch till the end Frankfurt is unreal😍🇩🇪 Please '
             'comment which places you want next! #travel '
