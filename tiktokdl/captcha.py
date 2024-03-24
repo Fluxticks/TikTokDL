@@ -1,128 +1,235 @@
-import random
-import time
-from urllib.parse import parse_qs, urlparse
+import cv2 as cv
+from random import randint
 
-from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Page, Request
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import Page
 
 from tiktokdl.image_processing import find_position, image_from_url
+from tiktokdl.tiktok_magic import (
+    CAPTCHA_GET_HEADERS,
+    CAPTCHA_HOST,
+    CAPTCHA_POST_HEADERS,
+    CAPTCHA_VERSION,
+    CHALLENGE_CODE,
+    MODIFIED_IMAGE_WIDTH,
+    OS_TYPE,
+)
+from tiktokdl.session_store import get_device_id, get_ms_token, get_verify_fp
 
-from typing import Tuple, Union
-
-
-def __parse_captcha_params_from_url(url: str) -> dict:
-    parsed_url = urlparse(url, allow_fragments=False)
-    params = parse_qs(parsed_url.query)
-    out = {}
-    for key, value in params.items():
-        out[key] = value[0]
-    return out
-
-
-def __get_captcha_response_params(url: str) -> dict:
-    request_params = __parse_captcha_params_from_url(url)
-    request_params["tmp"] = f"{time.time()}{random.randint(111, 999)}"
-    return request_params
+from typing import Dict, Tuple
 
 
-async def __get_captcha_response_headers(request: Request) -> dict:
-    all_headers = await request.all_headers()
-    all_headers["content-type"] = "application/json;charset=UTF-8"
-    return all_headers
+def __generate_captcha_response(
+    captcha_solution: Dict, captcha_id: str, verify_id: str
+) -> Dict:
+    data = {
+        "modified_img_width": MODIFIED_IMAGE_WIDTH,
+        "id": captcha_id,
+        "mode": "slide",
+        "reply": captcha_solution,
+        "reply2": captcha_solution,
+    }
+
+    response = {**data, "verify_id": verify_id, "version": CAPTCHA_VERSION}
+    return response
 
 
-def __generate_random_captcha_steps(piece_position: Tuple[int, int],
-                                    tip_y_value: int):
-    x_position = piece_position[0]
+def __generate_random_captcha_steps(
+    target_position, tip_y_value: int
+) -> Tuple[Dict, Dict]:
+    """Generate a random sequence of movements to simulate a human sliding the piece to the correct position.
 
+    Args:
+        target_position (int): The target piece X position.
+        tip_y_value (int): The tip_y value given by the challenge.
+
+    Returns:
+        Tuple[Dict, Dict]: First dictionary stores the solution required by TikTok. Second dictionary stores the deltas between each step.
+    """
+    current_position = 0
+    current_time = randint(200, 400)
     steps = []
-    current_distance = 0
-    relative_time = random.randint(100, 300)
-    while current_distance < x_position:
-        current_distance += random.randint(1, 4)
-        relative_time += random.randint(6, 9)
-        steps.append({
-            "relative_time": relative_time,
-            "x": current_distance,
-            "y": tip_y_value
-        })
+    deltas = []
+    while current_position < target_position:
+        time_step = randint(8, 9)
+        move_step = randint(1, 6)
 
-    if steps[-1].get("x") < x_position or steps[-1].get("x") > x_position:
-        steps.append({
-            "relative_time": relative_time + random.randint(6, 9),
-            "x": x_position,
-            "y": tip_y_value
-        })
+        current_time += time_step
+        current_position += move_step
 
+        steps.append(
+            {"x": current_position, "y": target_position, "relative_time": current_time}
+        )
+
+        deltas.append({"x": move_step, "y": randint(-2, 2), "time": time_step})
+
+    if steps[-1]["x"] > target_position or steps[-1]["x"] < target_position:
+        time_step = randint(8, 9)
+        move_step = target_position - steps[-1]["x"]
+        steps.append(
+            {
+                "x": target_position,
+                "y": tip_y_value,
+                "relatie_time": current_time + time_step,
+            }
+        )
+
+        deltas.append({"x": move_step, "y": randint(-2, 2), "time": time_step})
+
+    return steps, deltas
+
+
+def __calculate_image_scale(
+    original_width: int, output_width: int = MODIFIED_IMAGE_WIDTH
+) -> float:
+    """Get the scale to modify the image by to get the desired modified image width.
+
+    Args:
+        original_width (int): The original width of the image.
+        output_width (int, optional): The output image width. Defaults to MODIFIED_IMAGE_WIDTH.
+
+    Returns:
+        float: The scale to modify the original width and height by to get the desired width.
+    """
+    return float(output_width) / float(original_width)
+
+
+def __solve_captcha(challenge_data: Dict) -> Dict:
+    background = image_from_url(challenge_data.get("url_1"))
+    piece = image_from_url(challenge_data.get("url_2"))
+
+    _, original_width, _ = background.shape
+    ratio = __calculate_image_scale(original_width)
+
+    background = cv.resize(background, (0, 0), fx=ratio, fy=ratio)
+    piece = cv.resize(piece, (0, 0), fx=ratio, fy=ratio)
+
+    x, y = find_position(background, piece)
+    h, w, _ = piece.shape
+
+    i = cv.rectangle(background, (x, y), (x + w, y + h), 255, 2)
+
+    steps, _ = __generate_random_captcha_steps(x, challenge_data.get("tip_y"))
     return steps
 
 
-def __calculate_captcha_solution(captcha_get_data: dict) -> dict:
-    data = captcha_get_data.get("data").get("challenges")[0].get("question")
+def __parse_captcha_challenge(challenge_response: Dict) -> Dict:
+    """Get the required information from the challenge given by TikTok.
 
-    bg_url = data.get("url1")
-    piece_url = data.get("url2")
-    tip_value = data.get("tip_y")
+    Args:
+        challenge_response (Dict): The raw dictionary of the challenge given by TikTok.
 
-    bg_image = image_from_url(bg_url)
-    piece_image = image_from_url(piece_url)
+    Returns:
+        Dict: The challenge data.
+    """
+    data = challenge_response.get("data")
+    captcha_id = data.get("id")
+    verify_id = data.get("verify_id")
+    mode = data.get("mode")
 
-    position = find_position(bg_image, piece_image)
+    question = data.get("question")
+    url_1 = question.get("url1")
+    url_2 = question.get("url2")
+    tip_y = question.get("tip_y")
 
-    body = {
-        "modified_img_width": 552,
-        "id": captcha_get_data.get("data").get("id"),
-        "mode": "slide",
-        "reply": __generate_random_captcha_steps(position, tip_value)
+    return {
+        "captcha_id": captcha_id,
+        "verify_id": verify_id,
+        "mode": mode,
+        "url_1": url_1,
+        "url_2": url_2,
+        "tip_y": tip_y,
     }
 
-    return body
+
+async def __get_challenge(
+    page: Page,
+    verify_fp: str,
+    device_id: int,
+    ms_token: str,
+    timeout_interval: float = 100,
+    max_requests: int = 5,
+) -> Dict:
+    """Get a challenge from TikTok that can be used to verify the current session.
+
+    Args:
+        page (Page): The page to get the session of.
+        verify_fp (str): The VerifyFp string of the current session.
+        device_id (int): The Device ID of the current session.
+        ms_token (str): The msToken of the current session.
+        timeout_interval (float, optional): How long to wait between requesting a new challenge when the given challenge is not 'slide'. Defaults to 100.
+        max_requests (int, optional): The maximum number of requests to make. Defaults to 5.
+
+    Returns:
+        Dict: The required challenge data that can be used to verify the challenge.
+    """
+    api_request_context = page.request
+    challenge_type = None
+    request_count = 0
+
+    while challenge_type != "slide" and request_count < max_requests:
+        await page.wait_for_timeout(timeout_interval)
+        captcha_request = await api_request_context.fetch(
+            f"https://{CAPTCHA_HOST}/captcha/get",
+            params={
+                "did": device_id,
+                "device_id": device_id,
+                "os_type": OS_TYPE,
+                "fp": verify_fp,
+                "type": "verify",
+                "subtype": "slide",
+                "msToken": ms_token,
+            },
+            method="GET",
+            headers=CAPTCHA_GET_HEADERS,
+        )
+
+        data = await captcha_request.json()
+        challenge_type = data.get("data").get("mode")
+        request_count += 1
+
+    return __parse_captcha_challenge(data)
 
 
-async def handle_captcha(playwright_page: Page,
-                         attempts: int = 3,
-                         timeout: Union[float, None] = 5000) -> bool:
-    captcha_success_status = False
-    attempt_count = 0
+async def verify_session(page: Page, cookie_timeout: float = 30000) -> bool:
+    """Complete a CAPTCHA to verify the current session for TikTok.
 
-    while not captcha_success_status and attempt_count < attempts:
-        try:
-            async with playwright_page.expect_request(
-                    lambda x: "/captcha/get?" in x.url,
-                    timeout=timeout) as request:
-                await playwright_page.wait_for_load_state("networkidle")
-                request_value = await request.value
-                response = await request_value.response()
-                response_data = await response.json()
+    Args:
+        page (Page): The page to verify the session of.
+        cookie_timeout (float, optional): How long to wait for cookies to appear. Defaults to 30000.
 
-                captcha_solution = __calculate_captcha_solution(response_data)
-                post_url_query_params = __get_captcha_response_params(
-                    request_value.url)
-                post_headers = await __get_captcha_response_headers(
-                    request_value)
-                base_url = urlparse(request_value.url).netloc
-                api_request_context = playwright_page.request
+    Returns:
+        bool: If the session verification was successful.
+    """
+    cookies = await page.context.cookies()
+    verify_fp = await get_verify_fp(page, cookie_timeout)
+    device_id = await get_device_id(page, cookie_timeout)
+    ms_token = get_ms_token(cookies)
 
-                await playwright_page.wait_for_timeout(1000)
-                captcha_status = await api_request_context.post(
-                    f"https://{base_url}/captcha/verify",
-                    data=captcha_solution,
-                    headers=post_headers,
-                    params=post_url_query_params)
+    captcha_challenge = await __get_challenge(page, verify_fp, device_id, ms_token)
 
-                if captcha_status.status != 200:
-                    return False
+    captcha_solution = __solve_captcha(captcha_challenge)
 
-                captcha_status_data = await captcha_status.json()
-                captcha_success_status = captcha_status_data.get(
-                    "message") == "Verification complete"
-                attempt_count += 1
-                await playwright_page.locator("#verify-bar-close").click()
+    challenge_response_data = __generate_captcha_response(
+        captcha_solution, captcha_challenge.get("captcha_id"), verify_fp
+    )
 
-        except PlaywrightTimeoutError:
-            return True
-        except PlaywrightError:
-            return False
+    captcha_response_request = await page.request.fetch(
+        f"https://{CAPTCHA_HOST}/captcha/verify",
+        headers=CAPTCHA_POST_HEADERS,
+        data=challenge_response_data,
+        params={
+            "did": device_id,
+            "device_id": device_id,
+            "os_type": OS_TYPE,
+            "fp": verify_fp,
+            "type": "verify",
+            "subtype": "slide",
+            "mode": "slide",
+            "msToken": ms_token,
+            "challenge_code": CHALLENGE_CODE,
+        },
+        method="POST",
+    )
 
-    return captcha_success_status
+    captcha_response = await captcha_response_request.json()
+    return captcha_response.get("message") == "Verification complete"

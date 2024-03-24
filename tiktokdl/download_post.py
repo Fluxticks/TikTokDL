@@ -5,9 +5,9 @@ from os.path import curdir
 from os.path import sep as PATH_SEP
 from urllib.request import urlretrieve
 
-from playwright.async_api import Page, async_playwright
+from playwright.async_api import BrowserContext, Page, async_playwright, Playwright
 
-from tiktokdl.captcha import handle_captcha
+from tiktokdl.captcha import verify_session
 from tiktokdl.exceptions import (
     CaptchaFailedException,
     DownloadFailedException,
@@ -16,7 +16,7 @@ from tiktokdl.exceptions import (
 )
 from tiktokdl.post_data import TikTokPost, TikTokSlide, TikTokVideo
 
-from typing import Union
+from typing import Literal, Union
 
 __all__ = ["get_post"]
 
@@ -47,8 +47,7 @@ def __post_is_slideshow(data: dict) -> bool:
     return data.get("imagePost") is not None
 
 
-def __parse_api_response(
-        api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
+def __parse_api_response(api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
     root_data = api_response.get("itemInfo").get("itemStruct")
 
     author_data = root_data.get("author")
@@ -82,8 +81,63 @@ def __parse_api_response(
         return TikTokVideo(**post.__dict__, video_thumbnail=video_thumbnail)
 
 
-async def download_video(playwright_page: Page, video_info: TikTokVideo,
-                         timeout: float, download_path: Union[str, None]):
+async def __get_browser(
+    playwright_instance: Playwright,
+    browser: str,
+    proxy: Union[dict, None] = None,
+    headless: Union[bool, None] = None,
+    slow_mo: Union[float, None] = None,
+    **kwargs,
+) -> BrowserContext:
+
+    browser_instance = None
+
+    if browser == "chromium":
+        filtered_args = __filter_kwargs(playwright_instance.chromium.launch, kwargs)
+        browser_instance = await playwright_instance.chromium.launch(
+            proxy=proxy,
+            headless=headless,
+            slow_mo=slow_mo,
+            args=["--disable-http2"],
+            **filtered_args,
+        )
+    elif browser == "firefox":
+        filtered_args = __filter_kwargs(playwright_instance.firefox.launch, kwargs)
+        browser_instance = await playwright_instance.firefox.launch(
+            proxy=proxy,
+            headless=headless,
+            slow_mo=slow_mo,
+            firefox_user_prefs={
+                "http.spdy.enabled.http2": False,
+                "network.http.http2.enabled": False,
+                "network.http.http2.enabled.deps": False,
+                "network.http.http2.websockets": False,
+            },
+            **filtered_args,
+        )
+    elif browser == "webkit":
+        filtered_args = __filter_kwargs(playwright_instance.webkit.launch, kwargs)
+        browser_instance = await playwright_instance.webkit.launch(
+            proxy=proxy, headless=headless, slow_mo=slow_mo, **filtered_args
+        )
+    else:
+        raise ValueError(
+            "Invalid browser provided. Must be one of chromium, firefox or webkit."
+        )
+
+    device = playwright_instance.devices["iPhone 14 Pro Max"]
+    device.pop("is_mobile")
+    context = await browser_instance.new_context(**device)
+    await context.clear_cookies()
+    return context
+
+
+async def download_video(
+    playwright_page: Page,
+    video_info: TikTokVideo,
+    timeout: float,
+    download_path: Union[str, None],
+):
     """Uses the the browser request for the video to download the video. Valid for any download setting but less reliable.
 
     Args:
@@ -98,7 +152,8 @@ async def download_video(playwright_page: Page, video_info: TikTokVideo,
 
     response_base_url = video_source.split("?")[0]
     async with playwright_page.expect_request_finished(
-            lambda x: response_base_url in x.url, timeout=timeout) as request:
+        lambda x: response_base_url in x.url, timeout=timeout
+    ) as request:
         request_value = await request.value
         response = await request_value.response()
         save_path = f"{download_path}{video_info.post_id}.mp4"
@@ -107,8 +162,7 @@ async def download_video(playwright_page: Page, video_info: TikTokVideo,
         video_info.file_path = save_path
 
 
-async def download_slideshow(video_info: TikTokSlide,
-                             download_path: Union[str, None]):
+async def download_slideshow(video_info: TikTokSlide, download_path: Union[str, None]):
     """For a given Slideshow post, download the images associated with it.
 
     Args:
@@ -127,72 +181,74 @@ async def download_slideshow(video_info: TikTokSlide,
     video_info.images = images
 
 
-async def __get_post(url: str,
-                     download: bool = True,
-                     proxy: Union[dict, None] = None,
-                     request_timeout: float = 5000,
-                     download_path: Union[str, None] = None,
-                     headless: Union[bool, None] = None,
-                     slow_mo: Union[float, None] = None,
-                     **kwargs) -> Union[TikTokSlide, TikTokVideo]:
+async def __get_post(
+    url: str,
+    download: bool = True,
+    browser: Literal["chromium", "firefox", "webkit"] = "firefox",
+    proxy: Union[dict, None] = None,
+    request_timeout: float = 5000,
+    download_path: Union[str, None] = None,
+    headless: Union[bool, None] = None,
+    slow_mo: Union[float, None] = None,
+    **kwargs,
+) -> Union[TikTokSlide, TikTokVideo]:
     async with async_playwright() as playwright:
-        # TODO: Find a way to use Chromium and be able to recive the download_video response body
-        # browser = await playwright.chromium.launch(headless=headless, slow_mo=slow_mo, args=["--disable-http2"])
-        other_kwargs = __filter_kwargs(playwright.firefox.launch, kwargs)
-        browser = await playwright.firefox.launch(headless=headless,
-                                                  slow_mo=slow_mo,
-                                                  proxy=proxy,
-                                                  **other_kwargs)
-        device = playwright.devices["iPhone 14 Pro Max"]
-        device.pop("is_mobile")
-        context = await browser.new_context(**device)
-        await context.clear_cookies()
+
+        context = await __get_browser(
+            playwright, browser, proxy, headless, slow_mo, **kwargs
+        )
 
         page = await context.new_page()
         await page.goto(url)
-        if not await handle_captcha(page):
+        if not await verify_session(page):
             raise CaptchaFailedException(url=url)
 
-        async with page.expect_request(lambda x: "/api/item/detail/" in x.url,
-                                       timeout=request_timeout) as request:
+        async with page.expect_request(
+            lambda x: "/api/item/detail/" in x.url, timeout=request_timeout
+        ) as request:
             await page.reload()
-            request_value = await request.value
-            response = await request_value.response()
-            data = await response.json()
-            try:
-                parsed_response = __parse_api_response(data)
-            except:
-                raise ResponseParseException(url=url)
 
-            if download:
-                try:
-                    if isinstance(parsed_response, TikTokSlide):
-                        await download_slideshow(parsed_response,
-                                                 download_path)
-                    else:
-                        await download_video(page, parsed_response,
-                                             request_timeout, download_path)
-                except:
-                    raise DownloadFailedException(url=url)
+        request_value = await request.value
+        response = await request_value.response()
+        data = await response.json()
+        try:
+            parsed_response = __parse_api_response(data)
+        except:
+            raise ResponseParseException(url=url)
+
+        if download:
+            try:
+                if isinstance(parsed_response, TikTokSlide):
+                    await download_slideshow(parsed_response, download_path)
+                else:
+                    await download_video(
+                        page, parsed_response, request_timeout, download_path
+                    )
+            except:
+                raise DownloadFailedException(url=url)
 
         return parsed_response
 
 
-async def get_post(url: str,
-                   download: bool = True,
-                   proxy: Union[dict, None] = None,
-                   retries: int = 3,
-                   retry_delay: float = 500,
-                   request_timeout: float = 5000,
-                   download_path: Union[str, None] = None,
-                   headless: Union[bool, None] = None,
-                   slow_mo: Union[float, None] = None,
-                   **kwargs) -> Union[TikTokSlide, TikTokVideo]:
+async def get_post(
+    url: str,
+    download: bool = True,
+    browser: Literal["chromium", "firefox", "webkit"] = "firefox",
+    proxy: Union[dict, None] = None,
+    retries: int = 3,
+    retry_delay: float = 500,
+    request_timeout: float = 5000,
+    download_path: Union[str, None] = None,
+    headless: Union[bool, None] = None,
+    slow_mo: Union[float, None] = None,
+    **kwargs,
+) -> Union[TikTokSlide, TikTokVideo]:
     """Get the information about a given video URL. If the `download` param is set to True, also download the video as an mp4 file or slideshow images as JPEG files.
 
     Args:
         url (str): The URL to get the information of.
         download (bool, optional): If the video should be downloaded locally. Defaults to True.
+        browser (Literal[&quot;chromium&quot;, &quot;firefox&quot;, &quot;webkit&quot;], optional): The browser framework to use. If download is set to True, should be set to "firefox" as other browsers do not support downloads. Defaults to "firefox".
         proxy (dict | None, optional): The proxy settings to use for the request. Defaults to None.
         retries (int, optional): The number of times to retry upon failure. Defaults to 3.
         retry_delay (float, optional): The number of ms to wait before retrying. Defaults to 500.
@@ -210,16 +266,22 @@ async def get_post(url: str,
         TikTokVideo | TikTokSlide: The data for the given URL as a TikTokVideo or TikTokSlide dataclass.
     """
 
+    if download and browser != "firefox":
+        print("WARNING: Downloading is not supported on browsers other than firefox!")
+
     for x in range(retries + 1):
         try:
-            result = await __get_post(url=url,
-                                      download=download,
-                                      proxy=proxy,
-                                      request_timeout=request_timeout,
-                                      download_path=download_path,
-                                      headless=headless,
-                                      slow_mo=slow_mo,
-                                      **kwargs)
+            result = await __get_post(
+                url=url,
+                download=download,
+                browser=browser,
+                proxy=proxy,
+                request_timeout=request_timeout,
+                download_path=download_path,
+                headless=headless,
+                slow_mo=slow_mo,
+                **kwargs,
+            )
             return result
         except Exception as e:
             if x < retries:
