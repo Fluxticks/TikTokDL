@@ -31,6 +31,7 @@ CAPTCHA_POST_HEADERS = {
 # Magic numbers used for CAPTCHA verification
 OS_TYPE = 2
 CHALLENGE_CODE = 99999
+CAPTCHA_VERSION = 2
 
 # The cookie that stores the device_id of the current session.
 DEVICE_ID_TARGET_COOKIE = "__tea_cache_tokens"
