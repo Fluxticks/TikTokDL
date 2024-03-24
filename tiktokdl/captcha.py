@@ -96,7 +96,6 @@ def __solve_captcha(challenge_data: Dict) -> Dict:
     h, w, _ = piece.shape
 
     i = cv.rectangle(background, (x, y), (x + w, y + h), 255, 2)
-    cv.imwrite("sol.jpeg", i)
 
     steps, _ = __generate_random_captcha_steps(x, challenge_data.get("tip_y"))
     return steps
