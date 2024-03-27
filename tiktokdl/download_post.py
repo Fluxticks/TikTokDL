@@ -1,6 +1,6 @@
 import inspect
 from asyncio import sleep as async_sleep
-from datetime import datetime
+from datetime import datetime, timezone
 from os.path import curdir
 from os.path import sep as PATH_SEP
 from urllib.request import urlretrieve
@@ -55,7 +55,9 @@ def __parse_api_response(api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
 
     video_id = root_data.get("id")
     author_id = author_data.get("uniqueId")
-    timestamp = datetime.fromtimestamp(int(root_data.get("createTime")))
+    timestamp = datetime.fromtimestamp(
+        int(root_data.get("createTime")), tz=timezone.utc
+    )
 
     post = TikTokPost(
         url=f"https://tiktok.com/@{author_id}/video/{video_id}",
