@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 
 from tiktokdl.post_data import TikTokSlide, TikTokVideo
 import asyncio
@@ -32,7 +32,7 @@ class Test_TestTikTokURL(unittest.TestCase):
             post_description="Watch till the end Frankfurt is unreal😍🇩🇪 Please "
             "comment which places you want next! #travel "
             "#frankfurt #world ",
-            timestamp=datetime(2024, 3, 1, 17, 24, 40),
+            timestamp=datetime.fromtimestamp(1709310280, tz=timezone.utc),
             like_count=281600,
             share_count=8943,
             comment_count=5857,
@@ -54,7 +54,7 @@ class Test_TestTikTokURL(unittest.TestCase):
             author_url="https://tiktok.com/@bbnotiktok",
             post_download_setting=0,
             post_description="i love asmongold",
-            timestamp=datetime(2024, 2, 19, 22, 24, 13),
+            timestamp=datetime.fromtimestamp(1708377853, tz=timezone.utc),
             like_count=70100,
             share_count=318,
             comment_count=194,
@@ -81,7 +81,7 @@ class Test_TestTikTokURL(unittest.TestCase):
             "dismissive doctor)  #adhd #wrapped "
             "#spotifywrapped #memetherapy #swiftie "
             "#newlydiagnosedadhd @Spotify @spotifyuk ",
-            timestamp=datetime(2023, 11, 29, 18, 7, 13),
+            timestamp=datetime.fromtimestamp(1701277633, tz=timezone.utc),
             like_count=60600,
             share_count=3381,
             comment_count=305,
