@@ -7,9 +7,9 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="tiktok-dlpy",
-    version="2.0.1",
+    version="2.1.0",
     url="https://github.com/Fluxticks/TikTokDL",
-    download_url="https://github.com/Fluxticks/TikTokDL/archive/v2.0.1.tar.gz",
+    download_url="https://github.com/Fluxticks/TikTokDL/archive/v2.1.0.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
     install_requires=[
@@ -23,7 +23,7 @@ setup(
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

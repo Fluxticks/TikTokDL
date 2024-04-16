@@ -3,6 +3,7 @@ from asyncio import sleep as async_sleep
 from datetime import datetime, timezone
 from os.path import curdir
 from os.path import sep as PATH_SEP
+import requests
 from urllib.request import urlretrieve
 
 from playwright.async_api import BrowserContext, Page, async_playwright, Playwright
@@ -14,6 +15,7 @@ from tiktokdl.exceptions import (
     ResponseParseException,
     RetryLimitReached,
 )
+from tiktokdl.tiktok_magic import MAXIMUM_REQUEST_BODY
 from tiktokdl.post_data import TikTokPost, TikTokSlide, TikTokVideo
 
 from typing import Literal, Union
@@ -153,15 +155,26 @@ async def download_video(
     video_source = await page_video_tag.get_attribute("src")
 
     response_base_url = video_source.split("?")[0]
-    async with playwright_page.expect_request_finished(
+    async with playwright_page.expect_request(
         lambda x: response_base_url in x.url, timeout=timeout
     ) as request:
-        request_value = await request.value
-        response = await request_value.response()
-        save_path = f"{download_path}{video_info.post_id}.mp4"
+        await playwright_page.reload()
+    request_value = await request.value
+    response = await request_value.response()
+    video_size = await response.header_value("content-length")
+    save_path = f"{download_path}{video_info.post_id}.mp4"
+    if int(video_size) < MAXIMUM_REQUEST_BODY:
         with open(save_path, "wb") as f:
             f.write(await response.body())
-        video_info.file_path = save_path
+    else:
+        request_headers = await request_value.all_headers()
+        with requests.get(request_value.url, headers=request_headers, stream=True) as r:
+            r.raise_for_status()
+            with open(save_path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+    video_info.file_path = save_path
 
 
 async def download_slideshow(video_info: TikTokSlide, download_path: Union[str, None]):

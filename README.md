@@ -4,6 +4,10 @@
 
 A python package to download TikTok videos or slideshows by URL without needing to login.
 
+## TODO:
+
+- Find a more exact value for `tiktok_magic.MAXIMUM_REQUEST_BODY` (Currently ~8MB)
+
 ## Usage
 
 1. Install the package

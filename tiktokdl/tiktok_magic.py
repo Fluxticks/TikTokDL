@@ -35,3 +35,6 @@ CAPTCHA_VERSION = 2
 
 # The cookie that stores the device_id of the current session.
 DEVICE_ID_TARGET_COOKIE = "__tea_cache_tokens"
+
+# The maximum size of the video that can be downloaded using playwright's body
+MAXIMUM_REQUEST_BODY = 8_000_000  # 8 MB
