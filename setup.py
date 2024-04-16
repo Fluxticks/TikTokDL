@@ -12,11 +12,7 @@ setup(
     download_url="https://github.com/Fluxticks/TikTokDL/archive/v2.1.0.tar.gz",
     author="Fluxticks",
     packages=find_packages(),
-    install_requires=[
-        "playwright",
-        "numpy",
-        "opencv-python",
-    ],
+    install_requires=["playwright", "numpy", "opencv-python", "requests"],
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="A package to download TikTok videos or slideshows by URL without needing to login",
