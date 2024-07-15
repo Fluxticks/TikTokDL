@@ -46,43 +46,51 @@ def __validate_download_path(download_path: Union[str, None]):
 
 
 def __post_is_slideshow(data: dict) -> bool:
-    return data.get("imagePost") is not None
+    return data.get("image") is not None
 
 
 def __parse_api_response(api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
-    root_data = api_response.get("itemInfo").get("itemStruct")
+    root_data = api_response.get("item_info")
 
-    author_data = root_data.get("author")
-    stats_data = root_data.get("stats")
+    stats_data = root_data.get("item_stats")
+    post_data = root_data.get("item_basic")
+    author_data = post_data.get("creator").get("base")
 
-    video_id = root_data.get("id")
-    author_id = author_data.get("uniqueId")
+    video_id = post_data.get("id")
+    author_id = author_data.get("unique_id")
     timestamp = datetime.fromtimestamp(
-        int(root_data.get("createTime")), tz=timezone.utc
+        int(post_data.get("create_time")), tz=timezone.utc
     )
 
     post = TikTokPost(
         url=f"https://tiktok.com/@{author_id}/video/{video_id}",
         post_id=video_id,
-        post_description=root_data.get("desc"),
+        post_description=post_data.get("desc"),
         timestamp=timestamp,
         author_username=author_id,
-        author_display_name=author_data.get("nickname"),
-        author_avatar=author_data.get("avatarLarger"),
+        author_display_name=author_data.get("nick_name"),
+        author_avatar=author_data.get("avatar_larger")[-1],
         author_url=f"https://tiktok.com/@{author_id}",
-        post_download_setting=author_data.get("downloadSetting"),
-        like_count=stats_data.get("diggCount"),
-        share_count=stats_data.get("shareCount"),
-        comment_count=stats_data.get("commentCount"),
-        view_count=stats_data.get("playCount"),
+        post_download_setting=-1,
+        like_count=stats_data.get("digg_count"),
+        share_count=stats_data.get("share_count"),
+        comment_count=stats_data.get("comment_count"),
+        view_count=stats_data.get("play_count"),
     )
 
-    if __post_is_slideshow(root_data):
-        images = root_data.get("imagePost").get("images")
+    if __post_is_slideshow(post_data):
+        images = post_data.get("image").get("images")
         return TikTokSlide(**post.__dict__, images=images)
     else:
-        video_thumbnail = root_data.get("video").get("originCover")
-        return TikTokVideo(**post.__dict__, video_thumbnail=video_thumbnail)
+        video_thumbnail = (
+            post_data.get("video").get("video_cover").get("origin_cover")[0]
+        )
+        download_url = (
+            post_data.get("video").get("video_play_info").get("download_addr")[0]
+        )
+        return TikTokVideo(
+            **post.__dict__, video_thumbnail=video_thumbnail, download_url=download_url
+        )
 
 
 async def __get_browser(
@@ -188,7 +196,7 @@ async def download_slideshow(video_info: TikTokSlide, download_path: Union[str, 
 
     images = []
     for idx, image_info in enumerate(video_info.images):
-        image_url = image_info.get("imageURL").get("urlList")[-1]
+        image_url = image_info.get("image_url")[-1]
         file = f"{download_path}{idx+1}.jpeg"
         urlretrieve(image_url, file)
         images.append(file)
