@@ -219,7 +219,7 @@ async def __get_post(
             raise CaptchaFailedException(url=url)
 
         async with page.expect_request(
-            lambda x: "/api/item/detail/" in x.url, timeout=request_timeout
+            lambda x: "/api/reflow/item/detail/" in x.url, timeout=request_timeout
         ) as request:
             await page.reload()
 
