@@ -214,14 +214,15 @@ async def __get_post(
         )
 
         page = await context.new_page()
-        await page.goto(url)
-        if not await verify_session(page):
-            raise CaptchaFailedException(url=url)
+        # TODO: Reimplement CAPTACHA verification
+        # await page.goto(url)
+        # if not await verify_session(page):
+        #     raise CaptchaFailedException(url=url)
 
         async with page.expect_request(
             lambda x: "/api/reflow/item/detail/" in x.url, timeout=request_timeout
         ) as request:
-            await page.reload()
+            await page.goto(url)
 
         request_value = await request.value
         response = await request_value.response()
