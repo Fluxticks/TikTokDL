@@ -24,6 +24,7 @@ class TikTokPost:
 @dataclass()
 class TikTokVideo(TikTokPost):
     video_thumbnail: str
+    download_url: str
     file_path: str = None
 
 
