@@ -30,4 +30,4 @@ class TikTokVideo(TikTokPost):
 
 @dataclass()
 class TikTokSlide(TikTokPost):
-    images: List[str] = None
+    images: List[dict] = None
