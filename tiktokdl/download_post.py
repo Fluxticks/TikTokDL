@@ -3,10 +3,11 @@ from asyncio import sleep as async_sleep
 from datetime import datetime, timezone
 from os.path import curdir
 from os.path import sep as PATH_SEP
+from urllib.parse import urlparse
 import requests
 from urllib.request import urlretrieve
 
-from playwright.async_api import BrowserContext, Page, async_playwright, Playwright
+from playwright.async_api import BrowserContext, async_playwright, Playwright
 
 from tiktokdl.captcha import verify_session
 from tiktokdl.exceptions import (
@@ -15,7 +16,6 @@ from tiktokdl.exceptions import (
     ResponseParseException,
     RetryLimitReached,
 )
-from tiktokdl.tiktok_magic import MAXIMUM_REQUEST_BODY
 from tiktokdl.post_data import TikTokPost, TikTokSlide, TikTokVideo
 
 from typing import Literal, Union
@@ -145,42 +145,42 @@ async def __get_browser(
 
 
 async def download_video(
-    playwright_page: Page,
+    initial_response: requests.Response,
     video_info: TikTokVideo,
-    timeout: float,
     download_path: Union[str, None],
 ):
     """Uses the the browser request for the video to download the video. Valid for any download setting but less reliable.
 
     Args:
-        playwright_page (Page): The current page.
+        initial_response (requests.Response): Response data from the /api/items/details request.
         video_info (TikTokVideo): The video data of the TikTok video.
-        timeout (float): THe number of ms to wait for the request to occur before timing out.
         download_path (str | None): The path to download the video to. If None, uses current directory.
     """
     download_path = __validate_download_path(download_path)
-    page_video_tag = playwright_page.locator("video").first
-    video_source = await page_video_tag.get_attribute("src")
+    parsed_donwload_url = urlparse(video_info.download_url)
+    download_url_host = parsed_donwload_url.hostname
+    initial_request_headers = initial_response.request.headers
+    video_request_headers = {
+        "accept": "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5",
+        "accept-encoding": "identity",
+        "accept-language": initial_request_headers["accept-language"],
+        "connection": initial_request_headers["connection"],
+        "cookie": initial_request_headers["cookie"],
+        "host": download_url_host,
+        "range": "bytes=0-",
+        "referrer": "https://www.tiktok.com/",
+        "user-agent": initial_request_headers["user-agent"],
+        "accept-language": initial_request_headers["accept-language"],
+    }
 
-    response_base_url = video_source.split("?")[0]
-    async with playwright_page.expect_request(
-        lambda x: response_base_url in x.url, timeout=timeout
-    ) as request:
-        await playwright_page.reload()
-    request_value = await request.value
-    response = await request_value.response()
-    video_size = await response.header_value("content-length")
     save_path = f"{download_path}{video_info.post_id}.mp4"
-    if int(video_size) < MAXIMUM_REQUEST_BODY:
+    with requests.get(
+        video_info.download_url, headers=video_request_headers, stream=True
+    ) as r:
+        r.raise_for_status()
         with open(save_path, "wb") as f:
-            f.write(await response.body())
-    else:
-        request_headers = await request_value.all_headers()
-        with requests.get(request_value.url, headers=request_headers, stream=True) as r:
-            r.raise_for_status()
-            with open(save_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
 
     video_info.file_path = save_path
 
@@ -245,9 +245,7 @@ async def __get_post(
                 if isinstance(parsed_response, TikTokSlide):
                     await download_slideshow(parsed_response, download_path)
                 else:
-                    await download_video(
-                        page, parsed_response, request_timeout, download_path
-                    )
+                    await download_video(response, parsed_response, download_path)
             except:
                 raise DownloadFailedException(url=url)
 
