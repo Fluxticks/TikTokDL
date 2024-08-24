@@ -30,6 +30,8 @@ class Test_TestTikTokBuild(IsolatedAsyncioTestCase):
             author_avatar="",
             author_url="https://tiktok.com/@sabrinacarpenter",
             author_id="121078843527806976",
+            post_description="How to host your own short n' sweet listening "
+            "party. Midnight tonight 💋 @Spotify ",
             timestamp=datetime.datetime(
                 2024, 8, 22, 17, 42, 30, tzinfo=datetime.timezone.utc
             ),
