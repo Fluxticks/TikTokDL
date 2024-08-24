@@ -6,7 +6,7 @@ A python package to download TikTok videos or slideshows by URL without needing 
 
 ## TODO:
 
-- Find a more exact value for `tiktok_magic.MAXIMUM_REQUEST_BODY` (Currently ~8MB)
+- Re-Implement Captcha Verifiation
 
 ## Usage
 
