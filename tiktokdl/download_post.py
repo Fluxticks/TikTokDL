@@ -9,9 +9,7 @@ from urllib.request import urlretrieve
 
 from playwright.async_api import BrowserContext, async_playwright, Playwright
 
-from tiktokdl.captcha import verify_session
 from tiktokdl.exceptions import (
-    CaptchaFailedException,
     DownloadFailedException,
     ResponseParseException,
     RetryLimitReached,
