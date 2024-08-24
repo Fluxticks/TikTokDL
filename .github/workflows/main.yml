@@ -24,4 +24,4 @@ jobs:
         run: pip install -U --force-reinstall opencv-python-headless && python -m playwright install && python -m playwright install-deps
 
       - name: Run Tests # run main.py
-        run: python -m unittest tests/test_urls.py
+        run: python -m unittest tests/test_build.py
