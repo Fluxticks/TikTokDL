@@ -57,7 +57,8 @@ def __parse_api_response(api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
     author_data = post_data.get("creator").get("base")
 
     video_id = post_data.get("id")
-    author_id = author_data.get("unique_id")
+    author_username = author_data.get("unique_id")
+    author_id = author_data.get("id")
     timestamp = datetime.fromtimestamp(
         int(post_data.get("create_time")), tz=timezone.utc
     )
@@ -67,10 +68,11 @@ def __parse_api_response(api_response: dict) -> Union[TikTokSlide, TikTokVideo]:
         post_id=video_id,
         post_description=post_data.get("desc"),
         timestamp=timestamp,
-        author_username=author_id,
+        author_username=author_username,
+        author_id=author_id,
         author_display_name=author_data.get("nick_name"),
         author_avatar=author_data.get("avatar_larger")[-1],
-        author_url=f"https://tiktok.com/@{author_id}",
+        author_url=f"https://tiktok.com/@{author_username}",
         post_download_setting=-1,
         like_count=stats_data.get("digg_count"),
         share_count=stats_data.get("share_count"),

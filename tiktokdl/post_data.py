@@ -12,6 +12,7 @@ class TikTokPost:
     author_display_name: str
     author_avatar: str
     author_url: str
+    author_id: str
     post_download_setting: int
     post_description: str
     timestamp: datetime
